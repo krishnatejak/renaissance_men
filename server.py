@@ -6,7 +6,6 @@ from tornado import httpserver, ioloop, web
 
 sys.path.append(os.path.abspath('.'))
 
-from common.config import get_sys_config
 from api.search import Search
 
 
