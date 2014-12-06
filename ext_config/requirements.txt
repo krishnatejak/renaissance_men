@@ -3,7 +3,4 @@ backports.ssl-match-hostname==3.4.0.2
 certifi==14.05.14
 psycopg2==2.5.4
 tornado==4.0.2
-gevent==1.0
-psycogreen==1.0
 wsgiref==0.1.2
-WTForms==2.0.1
