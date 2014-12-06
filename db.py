@@ -9,4 +9,4 @@ DB_ENGINE = create_engine(
     DB_URL.format(**config.DATABASES['default']), echo=config.DEBUG
 )
 
-Base = declarative_base()
+Base = declarative_base(bind=DB_ENGINE)

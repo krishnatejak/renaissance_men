@@ -4,7 +4,7 @@ from sqlalchemy.dialects.postgres import ARRAY
 import db
 
 
-__all__ = ['Service', 'ServiceProvider']
+__all__ = ['Service', 'ServiceProvider', 'ServiceSkill']
 
 
 class Service(db.Base):
