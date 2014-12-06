@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, Float
+from sqlalchemy import Column, Integer, String, Boolean, Float, ForeignKey
 from sqlalchemy.dialects.postgres import ARRAY
 
 from models import Base
@@ -25,3 +25,6 @@ class ServiceProvider(Base):
     address = Column("address", String(2048), nullable=False)
     home_location = Column("home_location", ARRAY(Float), nullable=False)
     office_location = Column("office_location", ARRAY(Float), nullable=False)
+    cost_per_hour = Column("cost", Float, default=0.0)
+    service = Column("service", ForeignKey('service.id'))
+
