@@ -1,6 +1,7 @@
 SQLAlchemy==0.9.8
 backports.ssl-match-hostname==3.4.0.2
 certifi==14.05.14
+clang==3.3
 psycopg2==2.5.4
 tornado==4.0.2
 wsgiref==0.1.2

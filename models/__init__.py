@@ -13,4 +13,4 @@ Base = declarative_base()
 
 from service import *
 
-Base.metadata.create_all(bind=DB_ENGINE)
+#Base.metadata.create_all(bind=DB_ENGINE)
