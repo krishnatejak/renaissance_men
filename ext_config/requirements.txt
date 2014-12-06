@@ -4,3 +4,5 @@ certifi==14.05.14
 psycopg2==2.5.4
 tornado==4.0.2
 wsgiref==0.1.2
+simplejson==3.6.5
+geopy==1.4.0
