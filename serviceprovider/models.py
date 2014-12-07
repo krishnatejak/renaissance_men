@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Boolean, Float, ForeignKey
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy.dialects.postgres import ARRAY
 
 import db
@@ -12,6 +13,7 @@ class Service(db.Base):
 
     id = Column(Integer, primary_key=True)
     name = Column("name", String(256), nullable=False)
+    trash = Column("trash", Boolean, default=False)
 
 
 class ServiceProvider(db.Base):
@@ -26,6 +28,9 @@ class ServiceProvider(db.Base):
     office_location = Column("office_location", ARRAY(Float), nullable=False)
     cost_per_hour = Column("cost", Float, default=0.0)
     service = Column("service", ForeignKey('service.id'))
+    experience = Column("experience", Float, default=0.0)
+    trash = Column("trash", Boolean, default=False)
+    skills = relationship("ServiceSkill", backref="service_provider")
 
 
 class ServiceSkill(db.Base):
@@ -35,3 +40,4 @@ class ServiceSkill(db.Base):
     name = Column("name", String(512), nullable=False)
     inspection = Column("inspection", Boolean, default=False)
     provider = Column("provider", ForeignKey('service_provider.id'))
+    trash = Column("trash", Boolean, default=False)
