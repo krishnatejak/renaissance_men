@@ -42,3 +42,33 @@ class TornadoJSONEncoder(json.JSONEncoder):
         else:
             return super(TornadoJSONEncoder, self).default(o)
 
+
+def transaction(function):
+    """transaction decorator to handle session life cycle"""
+    def _wrapper(session, *args, **kwargs):
+        try:
+            return function(session, *args, **kwargs)
+        except:
+            session.rollback()
+            raise
+        finally:
+            pass
+            #session.close()
+
+    return _wrapper
+
+
+def update_model_from_dict(model_instance, value_dict):
+    for key, value in value_dict.iteritems():
+        if hasattr(model_instance, key):
+            setattr(model_instance, key, value)
+
+
+def model_to_dict(model_obj):
+    return model_obj.asdict(
+        exclude=model_obj.Meta.exclude,
+        follow={
+            e: dict(exclude=model_obj.Meta.exclude)
+            for e in model_obj.Meta.follow
+        }
+    )

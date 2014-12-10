@@ -1,25 +1,29 @@
 import json
-from tornado.web import RequestHandler
-from db import DB_ENGINE as engine
 
+from tornado.web import RequestHandler
+
+import db
 from serviceprovider.util import create_service_provider
+from utils import model_to_dict
+
+
 __all__ = ['ServiceProviderHandler']
 
+
 class BaseHandler(RequestHandler):
-    def initialize(self, dbsession):
-        self.dbsession = dbsession
+    def initialize(self):
+        self.dbsession = db.Session()
 
 
-class ServiceProviderHandler(RequestHandler):
-
+class ServiceProviderHandler(BaseHandler):
     def get(self, provider_id):
         pass
 
     def post(self):
         post_data = json.loads(self.request.body)
-        return_dict = create_service_provider(engine, post_data)
-        self.set_status(return_dict.pop('response_code'))
-        self.write(return_dict)
+        service_provider = create_service_provider(self.dbsession, post_data)
+        self.write(model_to_dict(service_provider))
+        self.dbsession.close()
         self.finish()
 
     def put(self, provider_id):

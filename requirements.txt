@@ -9,3 +9,4 @@ simplejson==3.6.5
 geopy==1.4.0
 alembic==0.7.1
 pytz==2014.10
+dictalchemy==0.1.2.6
