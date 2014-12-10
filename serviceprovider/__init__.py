@@ -6,5 +6,6 @@ import db
 
 
 service_provider = Application([
-    (r'/service_providers/?', ServiceProviderHandler)
+    (r'/serviceproviders/?', ServiceProviderHandler),
+    (r'/serviceproviders/([\d-]*)/?', ServiceProvider_id_Handler)
 ], debug=config.DEBUG)

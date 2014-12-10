@@ -64,11 +64,15 @@ def update_model_from_dict(model_instance, value_dict):
             setattr(model_instance, key, value)
 
 
-def model_to_dict(model_obj):
-    return model_obj.asdict(
-        exclude=model_obj.Meta.exclude,
+def model_to_dict(model_obj, uri):
+    models_dict = model_obj.asdict(
+        exclude=model_obj.Meta.exclude + model_obj.Meta.fk,
         follow={
             e: dict(exclude=model_obj.Meta.exclude)
             for e in model_obj.Meta.follow
         }
     )
+    models_dict['href'] = {
+        'url': '/%s/%d' % (uri, model_obj.id)
+    }
+    return models_dict
