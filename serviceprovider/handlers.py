@@ -14,6 +14,9 @@ class BaseHandler(RequestHandler):
     def initialize(self):
         self.dbsession = db.Session()
 
+    def on_finish(self):
+        self.dbsession.close()
+
 
 class ServiceProviderHandler(BaseHandler):
     def get(self, provider_id):
@@ -23,7 +26,6 @@ class ServiceProviderHandler(BaseHandler):
         post_data = json.loads(self.request.body)
         service_provider = create_service_provider(self.dbsession, post_data)
         self.write(model_to_dict(service_provider))
-        self.dbsession.close()
         self.finish()
 
     def put(self, provider_id):
