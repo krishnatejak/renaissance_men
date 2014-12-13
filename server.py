@@ -1,11 +1,6 @@
-import sys
-import os
+from tornado import ioloop
 
-from tornado import ioloop, web
 from admin import service_provider
-
-#sys.path.append(os.path.abspath('.'))
-
 
 
 if __name__ == "__main__":

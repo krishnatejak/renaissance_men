@@ -7,7 +7,7 @@ import db
 from admin.service.serviceprovider import *
 from admin.service.job import *
 from admin.service.service import *
-from utils import model_to_dict
+from utils import model_to_dict, TornadoJSONEncoder
 from exc import AppException
 
 
@@ -19,7 +19,7 @@ class BaseHandler(RequestHandler):
     resource_name = None
     create_required = {}
     update_ignored = {}
-    model_response_uris = {'href': '/{resource_name}/{id}'}
+    model_response_uris = {'href': '/{resource_name}/{id}/'}
 
     def initialize(self):
         self.dbsession = db.Session()
@@ -54,7 +54,8 @@ class BaseHandler(RequestHandler):
             uri_kwargs
         )
         self.set_status(200)
-        self.write(models_dict)
+        self.set_header("Content-Type", "application/json")
+        self.write(json.dumps(models_dict, cls=TornadoJSONEncoder))
         self.finish()
 
 
@@ -151,9 +152,9 @@ class JobHandler(BaseHandler):
                        'quoted_duration', 'materials_required', 'address'}
 
     model_response_uris = {
-        'href': '/{resource_name}/{id}',
-        'start': '/{resource_name}/{id}/start',
-        'end': '/{resource_name}/{id}/end'
+        'href': '/{resource_name}/{id}/',
+        'start': '/{resource_name}/{id}/start/',
+        'end': '/{resource_name}/{id}/end/'
     }
 
     @handle_exceptions

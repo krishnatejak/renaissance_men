@@ -9,6 +9,6 @@ service_provider = Application([
     (r'/serviceprovider/([\d]+)/verify/([\d]+)/', ServiceProviderVerifyHandler),
     (r'/service/', ServiceHandler),
     (r'/job/', JobHandler),
-    (r'/job/(P<jid>[\d]+)/start/', JobStartHandler),
-    (r'/job/(P<jid>[\d]+)/end/', JobStartHandler),
+    (r'/job/([\d]+)/start/', JobStartHandler),
+    (r'/job/([\d]+)/end/', JobStartHandler),
 ], debug=config.DEBUG)
