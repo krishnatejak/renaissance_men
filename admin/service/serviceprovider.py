@@ -2,6 +2,7 @@ import pyotp
 
 from admin.models import *
 from utils import transaction, update_model_from_dict
+from exceptions import AppException
 from config import OTP_SECRET
 
 
@@ -34,7 +35,7 @@ def update_service_provider(dbsession, provider_id, data):
             ServiceProvider.id == provider_id
         ).one()
     else:
-        raise Exception('Please provide a service provider id')
+        raise AppException('Please provide a service provider id')
 
     update_model_from_dict(service_provider, data)
     dbsession.add(service_provider)
@@ -47,7 +48,7 @@ def get_service_provider(dbsession, provider_id):
             ServiceProvider.id == provider_id
         ).one()
     else:
-        raise Exception('Please provide a service provider id')
+        raise AppException('Please provide a service provider id')
 
     return service_provider
 
@@ -58,7 +59,7 @@ def delete_service_provider(dbsession, provider_id):
             ServiceProvider.id == provider_id
         ).one()
     else:
-        raise Exception('Please provide a service provider id')
+        raise AppException('Please provide a service provider id')
 
     service_provider.trash = True
     dbsession.add(service_provider)
@@ -86,11 +87,11 @@ def verify_otp(dbsession, redisdb, spid, token):
     if count:
         count = int(count)
     else:
-        raise Exception('No active verification in progress')
+        raise AppException('No active verification in progress')
     otp = pyotp.HOTP(OTP_SECRET)
     if otp.verify(token, count):
         service_provider.verified = True
         dbsession.add(service_provider)
         redisdb.expire('otp:' + spid)
     else:
-        raise Exception('OTP verification failed')
+        raise AppException('OTP verification failed')

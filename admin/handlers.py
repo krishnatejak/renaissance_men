@@ -1,12 +1,14 @@
 import json
 
 from tornado.web import RequestHandler
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 import db
 from admin.service.serviceprovider import *
 from admin.service.job import *
 from admin.service.service import *
 from utils import model_to_dict
+from exceptions import AppException
 
 
 __all__ = ['ServiceProviderHandler', 'ServiceHandler', 'JobHandler',
@@ -30,7 +32,7 @@ class BaseHandler(RequestHandler):
         data = json.loads(self.request.body)
         if input_type == 'create':
             if not self.create_required <= set(data.keys()):
-                raise Exception(
+                raise AppException(
                     'required fields %s missing',
                     ','.join(self.create_required - set(data.keys()))
                 )
@@ -56,6 +58,31 @@ class BaseHandler(RequestHandler):
         self.finish()
 
 
+def handle_exceptions(function):
+    def _wrapper(instance, *args, **kwargs):
+        try:
+            return function(instance, *args, **kwargs)
+        except AppException as ae:
+            instance.set_status(400)
+            instance.write({
+                'error': str(ae)
+            })
+            instance.flush()
+        except (NoResultFound, MultipleResultsFound):
+            instance.set_status(400)
+            instance.write({
+                'error': 'No results found'
+            })
+            instance.flush()
+        except Exception as e:
+            instance.set_status(500)
+            instance.write({
+                'error': str(e)
+            })
+            instance.flush()
+    return _wrapper
+
+
 class ServiceProviderHandler(BaseHandler):
     resource_name = 'serviceprovider'
     create_required = {'name', 'phone_number', 'address', 'home_location',
@@ -63,21 +90,25 @@ class ServiceProviderHandler(BaseHandler):
                        'skills'}
     update_ignored = {'service'}
 
+    @handle_exceptions
     def post(self):
         data = self.check_input('create')
         service_provider = create_service_provider(self.dbsession, data)
         self.send_model_response(service_provider)
 
+    @handle_exceptions
     def put(self, provider_id):
         data = self.check_input('update')
         service_provider = update_service_provider(self.dbsession, provider_id,
                                                    data)
         self.send_model_response(service_provider)
 
+    @handle_exceptions
     def get(self, provider_id):
         service_provider = get_service_provider(self.dbsession, provider_id)
         self.send_model_response(service_provider)
 
+    @handle_exceptions
     def delete(self, provider_id):
         is_deleted = get_service_provider(self.dbsession, provider_id)
         self.set_status(204)
@@ -88,6 +119,7 @@ class ServiceProviderHandler(BaseHandler):
 class ServiceProviderVerifyHandler(BaseHandler):
     resource_name = 'serviceprovider'
 
+    @handle_exceptions
     def post(self, spid, token):
         if not token:
             initiate_verification(self.dbsession, self.redisdb, spid)
@@ -97,6 +129,7 @@ class ServiceProviderVerifyHandler(BaseHandler):
 class ServiceHandler(BaseHandler):
     resource_name = 'service'
 
+    @handle_exceptions
     def get(self):
         services = get_services(self.dbsession)
         self.send_model_response(services)
@@ -114,11 +147,13 @@ class JobHandler(BaseHandler):
         'end': '/{resource_name}/{id}/end'
     }
 
+    @handle_exceptions
     def post(self):
         data = self.check_input('create')
         job = create_job(self.dbsession, data)
         self.send_model_response(job)
 
+    @handle_exceptions
     def get(self, jid):
         job = get_job(self.dbsession, jid)
         self.send_model_response(job)
@@ -128,6 +163,7 @@ class JobStartHandler(BaseHandler):
     resource_name = 'job'
     model_response_uris = {}
 
+    @handle_exceptions
     def post(self, jid):
         set_job_started(self.dbsession, jid)
         self.set_status(200)
@@ -138,6 +174,7 @@ class JobEndHandler(BaseHandler):
     resource_name = 'job'
     model_response_uris = {}
 
+    @handle_exceptions
     def post(self, jid):
         set_job_ended(self.dbsession, jid)
         self.set_status(200)

@@ -4,6 +4,7 @@ from admin.models import Job
 from utils import update_model_from_dict, transaction
 from admin.service.user import create_user, get_user
 from utils import generate_secret
+from exceptions import AppException
 
 __all__ = ['create_job', 'get_job', 'set_job_ended', 'set_job_started']
 
@@ -38,7 +39,7 @@ def get_job(dbsession, jid):
 def set_job_started(dbsession, jid):
     job = dbsession.query(Job).filter(Job.id == jid).one()
     if job.started:
-        raise Exception('Cannot start started job')
+        raise AppException('Cannot start started job')
     job.started = datetime.utcnow()
     dbsession.add(job)
     #TODO send message to sp/user indicating job started
@@ -47,7 +48,7 @@ def set_job_started(dbsession, jid):
 def set_job_ended(dbsession, jid):
     job = dbsession.query(Job).filter(Job.id == jid).one()
     if job.ended:
-        raise Exception('Cannot end ended job')
+        raise AppException('Cannot end ended job')
     job.ended = datetime.utcnow()
     dbsession.add(job)
     #TODO send message to sp/uer indicating job ended
