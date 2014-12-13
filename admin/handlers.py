@@ -8,7 +8,7 @@ from admin.service.serviceprovider import *
 from admin.service.job import *
 from admin.service.service import *
 from utils import model_to_dict
-from exceptions import AppException
+from exc import AppException
 
 
 __all__ = ['ServiceProviderHandler', 'ServiceHandler', 'JobHandler',
@@ -91,26 +91,34 @@ class ServiceProviderHandler(BaseHandler):
     update_ignored = {'service'}
 
     @handle_exceptions
-    def post(self):
+    def post(self, spid):
+        if spid:
+            raise AppException('Cannot create with Id')
         data = self.check_input('create')
         service_provider = create_service_provider(self.dbsession, data)
         self.send_model_response(service_provider)
 
     @handle_exceptions
-    def put(self, provider_id):
+    def put(self, spid):
+        if not spid:
+            raise AppException('Cannot update without Id')
         data = self.check_input('update')
-        service_provider = update_service_provider(self.dbsession, provider_id,
+        service_provider = update_service_provider(self.dbsession, spid,
                                                    data)
         self.send_model_response(service_provider)
 
     @handle_exceptions
-    def get(self, provider_id):
-        service_provider = get_service_provider(self.dbsession, provider_id)
+    def get(self, spid):
+        if not spid:
+            raise AppException('Cannot fetch without Id')
+        service_provider = get_service_provider(self.dbsession, spid)
         self.send_model_response(service_provider)
 
     @handle_exceptions
-    def delete(self, provider_id):
-        is_deleted = get_service_provider(self.dbsession, provider_id)
+    def delete(self, spid):
+        if not spid:
+            raise AppException('Cannot delete without Id')
+        is_deleted = get_service_provider(self.dbsession, spid)
         self.set_status(204)
         self.write('')
         self.finish()
@@ -125,6 +133,7 @@ class ServiceProviderVerifyHandler(BaseHandler):
             initiate_verification(self.dbsession, self.redisdb, spid)
         else:
             verify_otp(self.dbsession, self.redisdb, spid, token)
+
 
 class ServiceHandler(BaseHandler):
     resource_name = 'service'

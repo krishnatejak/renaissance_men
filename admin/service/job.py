@@ -4,7 +4,7 @@ from admin.models import Job
 from utils import update_model_from_dict, transaction
 from admin.service.user import create_user, get_user
 from utils import generate_secret
-from exceptions import AppException
+from exc import AppException
 
 __all__ = ['create_job', 'get_job', 'set_job_ended', 'set_job_started']
 

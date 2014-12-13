@@ -2,7 +2,7 @@ import pyotp
 
 from admin.models import *
 from utils import transaction, update_model_from_dict
-from exceptions import AppException
+from exc import AppException
 from config import OTP_SECRET
 
 
