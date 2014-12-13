@@ -5,6 +5,7 @@ from logging.config import fileConfig
 import sys
 sys.path.append('.')
 import db
+import config
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -15,7 +16,7 @@ config = context.config
 fileConfig(config.config_file_name)
 
 # add your model's MetaData object here
-from serviceprovider.models import *
+from admin.models import *
 
 target_metadata = db.Base.metadata
 
@@ -37,7 +38,7 @@ def run_migrations_offline():
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    url = db.DB_URL.format(**config.DATABASES['default'])
     context.configure(url=url, target_metadata=target_metadata)
 
     with context.begin_transaction():

@@ -2,7 +2,7 @@ import sys
 import os
 
 from tornado import ioloop, web
-from serviceprovider import service_provider
+from admin import service_provider
 
 #sys.path.append(os.path.abspath('.'))
 

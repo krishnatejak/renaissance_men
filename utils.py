@@ -1,6 +1,14 @@
 import json
 import datetime
 import decimal
+import random
+
+from sqlalchemy.orm.query import Query
+
+import db
+
+CHARACTER_POOL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890!@#$%^&*()_+=-'
+
 
 
 def is_aware(value):
@@ -64,15 +72,55 @@ def update_model_from_dict(model_instance, value_dict):
             setattr(model_instance, key, value)
 
 
-def model_to_dict(model_obj, uri):
-    models_dict = model_obj.asdict(
-        exclude=model_obj.Meta.exclude + model_obj.Meta.fk,
-        follow={
-            e: dict(exclude=model_obj.Meta.exclude)
-            for e in model_obj.Meta.follow
+def model_to_dict(instance_or_query, response_uris, uri_kwargs):
+    if isinstance(instance_or_query, Query):
+        models_list = []
+        response_dict = {
+            'meta': {},
+            'objects': models_list
         }
-    )
-    models_dict['href'] = {
-        'url': '/%s/%d' % (uri, model_obj.id)
-    }
-    return models_dict
+        for instance in instance_or_query:
+            models_dict = instance.asdict(
+                exclude=instance.Meta.exclude + instance.Meta.fk,
+                follow={
+                    e: dict(exclude=instance.Meta.exclude)
+                    for e in instance.Meta.follow
+                }
+            )
+            uri_kwargs['id'] = instance.id
+            model_urls = {
+                k: v.format(**uri_kwargs)
+                for k, v in response_uris.iteritems()
+            }
+            models_dict['urls'] = model_urls
+            models_list.append(models_dict)
+        return response_dict
+    elif isinstance(instance_or_query, db.Base):
+        models_dict = instance_or_query.asdict(
+            exclude=instance_or_query.Meta.exclude + instance_or_query.Meta.fk,
+            follow={
+                e: dict(exclude=instance_or_query.Meta.exclude)
+                for e in instance_or_query.Meta.follow
+            }
+        )
+        uri_kwargs['id'] = instance_or_query.id
+        model_urls = {
+            k: v.format(**uri_kwargs)
+            for k, v in response_uris.iteritems()
+        }
+        models_dict['urls'] = model_urls
+        return models_dict
+
+
+def get_query_response(instance_or_query):
+    """"""
+    if isinstance(instance_or_query, Query):
+        # handle query
+        pass
+    elif isinstance(instance_or_query, db.Base):
+        # handle model instance
+        pass
+
+def generate_secret(length=32):
+
+    return ''.join(random.choice(CHARACTER_POOL) for i in range(length))

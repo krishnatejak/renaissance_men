@@ -1,6 +1,13 @@
-from serviceprovider.models import *
-from utils import transaction, update_model_from_dict
+import pyotp
 
+from admin.models import *
+from utils import transaction, update_model_from_dict
+from config import OTP_SECRET
+
+
+__all__ = ['create_service_provider', 'update_service_provider',
+           'get_service_provider', 'delete_service_provider',
+           'initiate_verification', 'verify_otp']
 
 @transaction
 def create_service_provider(dbsession, data):
@@ -58,3 +65,32 @@ def delete_service_provider(dbsession, provider_id):
     dbsession.commit()
 
     return True
+
+
+def initiate_verification(dbsession, redisdb, spid):
+    service_provider = dbsession.query(ServiceProvider).filter(
+        ServiceProvider.id == spid
+    ).one()
+    count = redisdb.incr('otp_count')
+    redisdb.set('otp:' + spid, count)
+    hotp = pyotp.HOTP(OTP_SECRET)
+    otp = hotp.at(count)
+    #TODO send OTP SMS to service provider phone number
+
+
+def verify_otp(dbsession, redisdb, spid, token):
+    service_provider = dbsession.query(ServiceProvider).filter(
+        ServiceProvider.id == spid
+    ).one()
+    count = redisdb.get('otp:' + spid)
+    if count:
+        count = int(count)
+    else:
+        raise Exception('No active verification in progress')
+    otp = pyotp.HOTP(OTP_SECRET)
+    if otp.verify(token, count):
+        service_provider.verified = True
+        dbsession.add(service_provider)
+        redisdb.expire('otp:' + spid)
+    else:
+        raise Exception('OTP verification failed')
