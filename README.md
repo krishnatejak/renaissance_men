@@ -37,8 +37,13 @@ virtualenv renv
 source renv/bin/activate
 pip install -r renaissance_men/requirements.txt
 ```
-
+4. migrate database schema
+```bash
+cd renaissance_men
+alembic upgrade head
+```
 #### running server
+
 ```bash
 source renv/bin/activate
 python renaissance_men/server.py
