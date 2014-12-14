@@ -76,6 +76,7 @@ def handle_exceptions(function):
             })
             instance.flush()
         except Exception as e:
+            print e
             instance.set_status(500)
             instance.write({
                 'error': str(e)
@@ -158,7 +159,9 @@ class JobHandler(BaseHandler):
     }
 
     @handle_exceptions
-    def post(self):
+    def post(self, jid):
+        if jid:
+            raise AppException('Cannot create with Id')
         data = self.check_input('create')
         job = create_job(self.dbsession, data)
         self.send_model_response(job)

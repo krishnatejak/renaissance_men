@@ -82,6 +82,7 @@ class Job(db.Base):
     location = Column("location", ARRAY(Float, dimensions=1))
     request = Column("request", String(2048))
     address = Column("address", String(2048))
+    phone_number = Column("phone_number", String(20))
     inspection = Column("inspection", Boolean, default=False)
     appointment_time = Column("appointment_time", DateTime(timezone=True))
     quote = Column("quote", Float)
@@ -93,6 +94,7 @@ class Job(db.Base):
     class Meta(object):
         follow = ['service', 'service_provider']
         exclude = ['id', 'trash']
+        follow_exclude = []
         fk = ['service_id', 'service_provider_id']
 
 

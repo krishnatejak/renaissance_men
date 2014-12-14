@@ -3,7 +3,7 @@ from datetime import datetime
 from admin.models import Job
 from utils import update_model_from_dict, transaction
 from admin.service.user import create_user, get_user
-from utils import generate_secret
+from utils import generate_secret, parse_json_datetime
 from exc import AppException
 
 __all__ = ['create_job', 'get_job', 'set_job_ended', 'set_job_started']
@@ -13,21 +13,25 @@ def create_job(dbsession, data):
     job = Job()
     data['service_id'] = data.pop('service')
     data['service_provider_id'] = data.pop('service_provider')
-    user_id = data.pop('user', -1)
-    try:
+    data['appointment_time'] = parse_json_datetime(data['appointment_time'])
+
+    user_id = data.pop('user_id', 0)
+    if user_id:
         user = get_user(dbsession, user_id)
-    except:
-        user = create_user(dbsession, {
-            'name': data.pop('name'),
-            'address': data.pop('address'),
-            'phone_number': data.pop('phone_number'),
-            'email': data.pop('email'),
-            'location': data['location'],
-            'password': generate_secret()
-        })
+    elif data.get('user'):
+        user_data = data.pop('user')
+        user_data['address'] = data['address']
+        user_data['phone_number'] = data['phone_number']
+        user_data['location'] = data['location']
+        user_data['password'] = generate_secret()
+        user = create_user(dbsession, user_data)
+    else:
+        raise AppException('User id or user data required to create job')
     data['user'] = user
+
     update_model_from_dict(job, data)
     dbsession.add(job)
+    dbsession.commit()
     return job
 
 
@@ -41,6 +45,7 @@ def set_job_started(dbsession, jid):
     if job.started:
         raise AppException('Cannot start started job')
     job.started = datetime.utcnow()
+    job.status = 'started'
     dbsession.add(job)
     #TODO send message to sp/user indicating job started
 
@@ -50,5 +55,6 @@ def set_job_ended(dbsession, jid):
     if job.ended:
         raise AppException('Cannot end ended job')
     job.ended = datetime.utcnow()
+    job.status = 'complete'
     dbsession.add(job)
-    #TODO send message to sp/uer indicating job ended
+    #TODO send message to sp/user indicating job ended

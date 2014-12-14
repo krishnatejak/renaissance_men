@@ -9,6 +9,7 @@ import db
 
 CHARACTER_POOL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890!@#$%^&*()_+=-'
 
+JSON_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
 
 
 def is_aware(value):
@@ -112,15 +113,11 @@ def model_to_dict(instance_or_query, response_uris, uri_kwargs):
         return models_dict
 
 
-def get_query_response(instance_or_query):
-    """"""
-    if isinstance(instance_or_query, Query):
-        # handle query
-        pass
-    elif isinstance(instance_or_query, db.Base):
-        # handle model instance
-        pass
-
 def generate_secret(length=32):
 
     return ''.join(random.choice(CHARACTER_POOL) for i in range(length))
+
+
+def parse_json_datetime(datetime_string):
+    datetime_string = datetime_string.strip()
+    return datetime.datetime.strptime(datetime_string, JSON_DATETIME_FORMAT)
