@@ -33,7 +33,7 @@ class BaseHandler(RequestHandler):
         if input_type == 'create':
             if not self.create_required <= set(data.keys()):
                 raise AppException(
-                    'required fields %s missing',
+                    'required fields %s missing' %
                     ','.join(self.create_required - set(data.keys()))
                 )
             else:

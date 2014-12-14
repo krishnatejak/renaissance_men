@@ -5,7 +5,7 @@ import config
 
 
 service_provider = Application([
-    (r'/serviceprovider/([\d]+)/', ServiceProviderHandler),
+    (r'/serviceprovider/([\d]+)?/?', ServiceProviderHandler),
     (r'/serviceprovider/([\d]+)/verify/([\d]+)/', ServiceProviderVerifyHandler),
     (r'/service/', ServiceHandler),
     (r'/job/', JobHandler),

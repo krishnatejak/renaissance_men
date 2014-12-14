@@ -8,7 +8,7 @@ from cryptacular.bcrypt import BCRYPTPasswordManager
 import db
 
 
-__all__ = ['Service', 'ServiceProvider']
+__all__ = ['Service', 'ServiceProvider', 'Job', 'ServiceSkill', 'User']
 
 
 class Service(db.Base):
@@ -18,6 +18,7 @@ class Service(db.Base):
     name = Column("name", String(256), nullable=False)
     service_providers = relationship('ServiceProvider', backref=backref('service'))
     jobs = relationship('Job', backref=backref('service'))
+    skills = relationship('ServiceSkill', backref=backref('service'))
     trash = Column("trash", Boolean, default=False)
 
     class Meta(object):
@@ -39,15 +40,33 @@ class ServiceProvider(db.Base):
     cost = Column("cost", Float, default=0.0)
     service_id = Column("service", ForeignKey('service.id'))
     experience = Column("experience", Float, default=0.0)
-    skills = Column("skills", ARRAY(JSON, dimensions=1))
+    skills = relationship('ServiceSkill', backref=backref('service_provider'))
     jobs = relationship('Job', backref=backref('service_provider'))
     verified = Column("verified", Boolean, default=False)
     trash = Column("trash", Boolean, default=False)
 
     class Meta(object):
-        follow = ['service']
+        follow = ['service', 'skills']
+        follow_exclude = ['service_provider_id', 'trash', 'service_id', 'id']
         exclude = ['id', 'trash']
-        fk = ['service_id']
+        fk = ['service_id', ]
+
+
+class ServiceSkill(db.Base):
+    __tablename__ = 'service_skill'
+
+    id = Column(Integer, primary_key=True)
+    name = Column("name", String(256), nullable=False)
+    inspection = Column("inspection", Boolean, default=False)
+    service_provider_id = Column("service_provider_id", ForeignKey('service_provider.id'))
+    service_id = Column("service_id", ForeignKey('service.id'))
+    trash = Column('trash', Boolean, default=False)
+
+    class Meta(object):
+        follow = []
+        follow_exclude = []
+        exclude = []
+        fk = []
 
 
 class Job(db.Base):
