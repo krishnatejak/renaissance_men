@@ -8,7 +8,7 @@ from config import OTP_SECRET
 
 __all__ = ['create_service_provider', 'update_service_provider',
            'get_service_provider', 'delete_service_provider',
-           'initiate_verification', 'verify_otp']
+           'initiate_verification', 'verify_otp', 'update_gcm_reg_id']
 
 @transaction
 def create_service_provider(dbsession, data):
@@ -21,7 +21,7 @@ def create_service_provider(dbsession, data):
     dbsession.add(service_provider)
     dbsession.commit()
     if skills:
-        update_service_provider_skills(
+        update_skills(
             dbsession, service_provider.id, service.id, skills
         )
     return service_provider
@@ -40,7 +40,7 @@ def update_service_provider(dbsession, provider_id, data):
     dbsession.add(service_provider)
     dbsession.commit()
     if skills:
-        update_service_provider_skills(
+        update_skills(
             dbsession, service_provider.id, service_provider.service_id, skills
         )
     return service_provider
@@ -100,7 +100,7 @@ def verify_otp(dbsession, redisdb, spid, token):
         raise AppException('OTP verification failed')
 
 
-def update_service_provider_skills(dbsession, spid, sid, skills):
+def update_skills(dbsession, spid, sid, skills):
 
     current_skills = set([
         (skill['name'], skill['inspection'])
@@ -134,4 +134,14 @@ def update_service_provider_skills(dbsession, spid, sid, skills):
             ServiceSkill.name.in_([skill[0] for skill in deleted_skills])
         ).update({'trash': True}, synchronize_session=False)
 
+    dbsession.commit()
+
+
+def update_gcm_reg_id(dbsession, spid, gcm_reg_id):
+    service_provider = dbsession.query(ServiceProvider).filter(
+        ServiceProvider.id == spid,
+        ServiceProvider.trash == False
+    )
+    service_provider.gcm_reg_id = gcm_reg_id
+    dbsession.add(service_provider)
     dbsession.commit()

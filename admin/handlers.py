@@ -12,7 +12,8 @@ from exc import AppException
 
 
 __all__ = ['ServiceProviderHandler', 'ServiceHandler', 'JobHandler',
-           'JobStartHandler', 'JobEndHandler', 'ServiceProviderVerifyHandler']
+           'JobStartHandler', 'JobEndHandler', 'ServiceProviderVerifyHandler',
+           'ServiceProviderGCMHandler']
 
 
 class BaseHandler(RequestHandler):
@@ -135,6 +136,19 @@ class ServiceProviderVerifyHandler(BaseHandler):
             initiate_verification(self.dbsession, self.redisdb, spid)
         else:
             verify_otp(self.dbsession, self.redisdb, spid, token)
+
+
+class ServiceProviderGCMHandler(BaseHandler):
+    resource_name = 'serviceprovider'
+    create_required = {'gcm_reg_id'}
+
+    @handle_exceptions
+    def post(self, spid):
+        data = self.check_input('create')
+        update_gcm_reg_id(self.dbsession, spid, data['gcm_reg_id'])
+        self.set_status(200)
+        self.finish()
+
 
 
 class ServiceHandler(BaseHandler):

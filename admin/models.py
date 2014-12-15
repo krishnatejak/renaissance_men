@@ -43,6 +43,7 @@ class ServiceProvider(db.Base):
     skills = relationship('ServiceSkill', backref=backref('service_provider'))
     jobs = relationship('Job', backref=backref('service_provider'))
     verified = Column("verified", Boolean, default=False)
+    gcm_reg_id = Column("gcm_reg_id", String)
     trash = Column("trash", Boolean, default=False)
 
     class Meta(object):
