@@ -133,7 +133,7 @@ class ServiceProviderVerifyHandler(BaseHandler):
     @handle_exceptions
     def post(self, spid, token):
         if not token:
-            initiate_verification(self.dbsession, self.redisdb, spid)
+            initiate_verification(self.dbsession, spid)
         else:
             verify_otp(self.dbsession, self.redisdb, spid, token)
 
@@ -150,15 +150,20 @@ class ServiceProviderGCMHandler(BaseHandler):
         self.finish()
 
 
-
 class ServiceHandler(BaseHandler):
     resource_name = 'service'
+    create_required = {'name'}
 
     @handle_exceptions
     def get(self):
         services = get_services(self.dbsession)
         self.send_model_response(services)
 
+    @handle_exceptions
+    def post(self):
+        data = self.check_input('create')
+        service = create_service(self.dbsession, data)
+        self.send_model_response(service)
 
 class JobHandler(BaseHandler):
     resource_name = 'job'

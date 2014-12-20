@@ -22,3 +22,6 @@ tornado-celery==0.3.4
 ujson==1.33
 wsgiref==0.1.2
 librabbitmq==1.6.1
+hiredis==0.1.5
+requests==2.5.0
+gcm-client==0.1.4

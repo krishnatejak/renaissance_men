@@ -19,3 +19,9 @@ OTP_SECRET = '7TT3WCJF7OIEKNYLMJSXWS3BV76RB3GI'
 CELERY_BROKER = 'amqp://guest:guest@localhost:5672//'
 
 DEBUG = True
+
+# Task Queues
+SERVICE_PROVIDER_QUEUE = 'admin.serviceprovider'
+SERVICE_QUEUE = 'admin.service'
+JOB_QUEUE = 'admin.job'
+USER_QUEUE = 'admin.user'

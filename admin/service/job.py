@@ -5,8 +5,11 @@ from utils import update_model_from_dict, transaction
 from admin.service.user import create_user, get_user
 from utils import generate_secret, parse_json_datetime
 from exc import AppException
+from admin import tasks
+import config
 
 __all__ = ['create_job', 'get_job', 'set_job_ended', 'set_job_started']
+
 
 @transaction
 def create_job(dbsession, data):
@@ -32,12 +35,19 @@ def create_job(dbsession, data):
     update_model_from_dict(job, data)
     dbsession.add(job)
     dbsession.commit()
+
+    tasks.create_job.apply_async(
+        job.id,
+        queue=config.JOB_QUEUE
+    )
+
     return job
 
 
 def get_job(dbsession, jid):
     job = dbsession.query(Job).filter(Job.id == jid).one()
     return job
+
 
 @transaction
 def set_job_started(dbsession, jid):
@@ -47,7 +57,13 @@ def set_job_started(dbsession, jid):
     job.started = datetime.utcnow()
     job.status = 'started'
     dbsession.add(job)
-    #TODO send message to sp/user indicating job started
+    dbsession.commit()
+
+    tasks.job_started.apply_async(
+        job.id,
+        queue=config.JOB_QUEUE
+    )
+
 
 @transaction
 def set_job_ended(dbsession, jid):
@@ -57,4 +73,9 @@ def set_job_ended(dbsession, jid):
     job.ended = datetime.utcnow()
     job.status = 'complete'
     dbsession.add(job)
-    #TODO send message to sp/user indicating job ended
+    dbsession.commit()
+
+    tasks.job_complete.apply_async(
+        job.id,
+        queue=config.JOB_QUEUE
+    )

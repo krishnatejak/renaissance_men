@@ -1,14 +1,16 @@
 import pyotp
 
 from admin.models import Service, ServiceProvider, ServiceSkill
+from admin import tasks
 from utils import transaction, update_model_from_dict
 from exc import AppException
-from config import OTP_SECRET
+import config
 
 
 __all__ = ['create_service_provider', 'update_service_provider',
            'get_service_provider', 'delete_service_provider',
            'initiate_verification', 'verify_otp', 'update_gcm_reg_id']
+
 
 @transaction
 def create_service_provider(dbsession, data):
@@ -24,6 +26,10 @@ def create_service_provider(dbsession, data):
         update_skills(
             dbsession, service_provider.id, service.id, skills
         )
+    tasks.add_service_provider.apply_async(
+        service_provider.id,
+        queue=config.SERVICE_PROVIDER_QUEUE
+    )
     return service_provider
 
 
@@ -43,7 +49,12 @@ def update_service_provider(dbsession, provider_id, data):
         update_skills(
             dbsession, service_provider.id, service_provider.service_id, skills
         )
+    tasks.update_service_provider.apply_async(
+        service_provider.id,
+        queue=config.SERVICE_PROVIDER_QUEUE
+    )
     return service_provider
+
 
 def get_service_provider(dbsession, provider_id):
     if provider_id:
@@ -54,6 +65,7 @@ def get_service_provider(dbsession, provider_id):
         raise AppException('Please provide a service provider id')
 
     return service_provider
+
 
 @transaction
 def delete_service_provider(dbsession, provider_id):
@@ -67,19 +79,23 @@ def delete_service_provider(dbsession, provider_id):
     service_provider.trash = True
     dbsession.add(service_provider)
     dbsession.commit()
-
+    tasks.delete_service_provider.apply_async(
+        service_provider.id,
+        queue=config.SERVICE_PROVIDER_QUEUE
+    )
     return True
 
 
-def initiate_verification(dbsession, redisdb, spid):
+def initiate_verification(dbsession, spid):
     service_provider = dbsession.query(ServiceProvider).filter(
-        ServiceProvider.id == spid
+        ServiceProvider.id == spid,
+        Service.trash == False
     ).one()
-    count = redisdb.incr('otp:count')
-    redisdb.set('otp:' + spid, count)
-    hotp = pyotp.HOTP(OTP_SECRET)
-    otp = hotp.at(count)
-    #TODO send OTP SMS to service provider phone number
+
+    tasks.verify_service_provider.apply_async(
+        service_provider.id,
+        queue=config.SERVICE_PROVIDER_QUEUE
+    )
 
 
 def verify_otp(dbsession, redisdb, spid, token):
@@ -91,7 +107,7 @@ def verify_otp(dbsession, redisdb, spid, token):
         count = int(count)
     else:
         raise AppException('No active verification in progress')
-    otp = pyotp.HOTP(OTP_SECRET)
+    otp = pyotp.HOTP(config.OTP_SECRET)
     if otp.verify(token, count):
         service_provider.verified = True
         dbsession.add(service_provider)
@@ -101,7 +117,6 @@ def verify_otp(dbsession, redisdb, spid, token):
 
 
 def update_skills(dbsession, spid, sid, skills):
-
     current_skills = set([
         (skill['name'], skill['inspection'])
         for skill in skills
