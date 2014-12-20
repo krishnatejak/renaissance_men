@@ -1,9 +1,11 @@
 from __future__ import absolute_import
 
 from celery import Celery
+from celery import Task
 from kombu import Exchange, Queue
 
 import config
+import db
 
 
 celery = Celery(
@@ -13,19 +15,20 @@ celery = Celery(
 
 celery.conf.update(
     CELERY_IGNORE_RESULT=True,
+    CELERY_ACCEPT_CONTENT=['json'],
     CELERY_CREATE_MISSING_QUEUES=False,
     CELERY_QUEUES=(
         Queue(
             'admin.serviceprovider.add',
             Exchange('admin'),
-            routing_key='admin.serviceprovider.add',
+            routing_key='admin.serviceprovider.#',
             delivery_mode=2,
             durable=True
         ),
         Queue(
             'admin.serviceprovider.otp',
             Exchange('admin'),
-            routing_key='admin.serviceprovider.otp',
+            routing_key='admin.serviceprovider.#',
             delivery_mode=1,
             durable=False
         ),
@@ -35,6 +38,31 @@ celery.conf.update(
         "admin.tasks",
     ),
 )
+
+
+class DBTask(Task):
+    abstract = True
+    _dbsession = None
+    _redis = None
+
+    @property
+    def db(self):
+        self._dbsession = db.Session()
+        return self._dbsession
+
+    @property
+    def r(self):
+        self._redis = db.Redis()
+        return self._redis
+
+    def on_success(self, retval, task_id, args, kwargs):
+        if self.db:
+            self.db.close()
+
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        if self.db:
+            self.db.close()
+
 
 if __name__ == "__main__":
     celery.start()

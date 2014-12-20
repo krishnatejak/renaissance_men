@@ -9,7 +9,8 @@ DATABASES = {
     },
     'redis': {
         'host': 'localhost',
-        'port': '6379'
+        'port': '6379',
+        'max_connections': 2000
     }
 }
 

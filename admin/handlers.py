@@ -24,7 +24,7 @@ class BaseHandler(RequestHandler):
 
     def initialize(self):
         self.dbsession = db.Session()
-        self.redisdb = db.REDIS_DB
+        self.redisdb = db.Redis()
 
     def on_finish(self):
         self.dbsession.close()
