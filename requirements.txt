@@ -25,3 +25,4 @@ librabbitmq==1.6.1
 hiredis==0.1.5
 requests==2.5.0
 gcm-client==0.1.4
+plivo==0.9.6
