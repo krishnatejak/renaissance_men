@@ -21,3 +21,4 @@ tornado==4.0.2
 tornado-celery==0.3.4
 ujson==1.33
 wsgiref==0.1.2
+librabbitmq==1.6.1

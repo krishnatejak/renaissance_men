@@ -75,7 +75,7 @@ def initiate_verification(dbsession, redisdb, spid):
     service_provider = dbsession.query(ServiceProvider).filter(
         ServiceProvider.id == spid
     ).one()
-    count = redisdb.incr('otp_count')
+    count = redisdb.incr('otp:count')
     redisdb.set('otp:' + spid, count)
     hotp = pyotp.HOTP(OTP_SECRET)
     otp = hotp.at(count)

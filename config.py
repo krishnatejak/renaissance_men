@@ -15,4 +15,6 @@ DATABASES = {
 
 OTP_SECRET = '7TT3WCJF7OIEKNYLMJSXWS3BV76RB3GI'
 
+CELERY_BROKER = 'amqp://guest:guest@localhost:5672//'
+
 DEBUG = True

@@ -23,7 +23,7 @@ class Service(db.Base):
 
     class Meta(object):
         follow = []
-        exclude = ['id', 'trash']
+        exclude = ['trash']
         fk = []
 
 

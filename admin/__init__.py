@@ -11,5 +11,5 @@ service_provider = Application([
     (r'/service/', ServiceHandler),
     (r'/job/([\d]+)?/?', JobHandler),
     (r'/job/([\d]+)/start/', JobStartHandler),
-    (r'/job/([\d]+)/end/', JobStartHandler),
+    (r'/job/([\d]+)/end/', JobEndHandler),
 ], debug=config.DEBUG)
