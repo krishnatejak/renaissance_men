@@ -19,16 +19,30 @@ celery.conf.update(
     CELERY_CREATE_MISSING_QUEUES=False,
     CELERY_QUEUES=(
         Queue(
-            'admin.serviceprovider.add',
+            'admin.serviceprovider',
             Exchange('admin'),
-            routing_key='admin.serviceprovider.#',
+            routing_key='admin.serviceprovider',
             delivery_mode=2,
             durable=True
         ),
         Queue(
-            'admin.serviceprovider.otp',
+            'admin.service',
             Exchange('admin'),
-            routing_key='admin.serviceprovider.#',
+            routing_key='admin.service',
+            delivery_mode=1,
+            durable=False
+        ),
+        Queue(
+            'admin.job',
+            Exchange('admin'),
+            routing_key='admin.job',
+            delivery_mode=1,
+            durable=False
+        ),
+        Queue(
+            'admin.user',
+            Exchange('admin'),
+            routing_key='admin.user',
             delivery_mode=1,
             durable=False
         ),
