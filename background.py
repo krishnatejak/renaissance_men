@@ -15,7 +15,7 @@ celery = Celery(
 
 celery.conf.update(
     CELERY_IGNORE_RESULT=True,
-    CELERY_ACCEPT_CONTENT=['json'],
+    CELERY_ACCEPT_CONTENT=['pickle'],
     CELERY_CREATE_MISSING_QUEUES=False,
     CELERY_DEFAULT_QUEUE='default',
     CELERY_QUEUES=(
