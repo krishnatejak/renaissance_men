@@ -22,7 +22,8 @@ class Service(db.Base):
     trash = Column("trash", Boolean, default=False)
 
     class Meta(object):
-        follow = []
+        follow = ['skills']
+        follow_exclude = ['service_provider_id', 'trash', 'service_id', 'id']
         exclude = ['trash']
         fk = []
 

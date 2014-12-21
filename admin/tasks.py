@@ -2,7 +2,7 @@ import pyotp
 
 from background import celery
 from background import DBTask
-from admin.models import ServiceProvider
+from admin.models import *
 import config
 from sms import OtpSms
 
@@ -59,4 +59,9 @@ def user_create(name, user_name, email, password):
 
 @celery.task(name='admin.service.add', base=DBTask, bind=True)
 def add_service(self, sid):
-    pass
+    service = self.db.query(Service).query(
+        Service.id == sid
+    )
+
+    self.r.sadd('services', service.name)
+

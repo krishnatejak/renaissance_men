@@ -84,7 +84,7 @@ def model_to_dict(instance_or_query, response_uris, uri_kwargs):
             models_dict = instance.asdict(
                 exclude=instance.Meta.exclude + instance.Meta.fk,
                 follow={
-                    e: dict(exclude=instance.Meta.exclude)
+                    e: dict(exclude=instance.Meta.follow_exclude)
                     for e in instance.Meta.follow
                 }
             )
