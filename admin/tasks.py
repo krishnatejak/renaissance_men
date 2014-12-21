@@ -73,7 +73,9 @@ def admin_add_all(self):
 
     self.r.sadd('services', [service[0] for service in services])
 
-    service_skills = self.db.query(ServiceSkill.name, Service.name, ServiceSkill.service_provider_id).filter(
+    service_skills = self.db.query(
+        ServiceSkill.name, Service.name, ServiceSkill.service_provider_id
+    ).filter(
         ServiceSkill.trash == False, ServiceSkill.service_id == Service.id,
         Service.trash == False
     ).all()
@@ -82,7 +84,11 @@ def admin_add_all(self):
         self.r.sadd("{0}:providers".format(service_name),service_provider_id)
         self.r.sadd("sp:{0}:skills".format(service_provider_id),service_skill)
 
-    service_providers = self.db.query(ServiceProvider).filter(ServiceProvider.trash == False).all()
+    service_providers = self.db.query(
+        ServiceProvider
+    ).filter(
+        ServiceProvider.trash == False
+    ).all()
     for service_provider in service_providers:
         sp_dict = {
             "name":service_provider.name,

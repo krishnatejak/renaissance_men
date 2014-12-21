@@ -7,14 +7,14 @@ import db
 from admin.service.serviceprovider import *
 from admin.service.job import *
 from admin.service.service import *
-from admin.models import *
+from admin.tasks import admin_add_all
 from utils import model_to_dict, TornadoJSONEncoder
 from exc import AppException
 
 
 __all__ = ['ServiceProviderHandler', 'ServiceHandler', 'JobHandler',
            'JobStartHandler', 'JobEndHandler', 'ServiceProviderVerifyHandler',
-           'ServiceProviderGCMHandler']
+           'ServiceProviderGCMHandler', 'PopulateHandler']
 
 
 class BaseHandler(RequestHandler):
@@ -251,3 +251,9 @@ class JobEndHandler(BaseHandler):
         self.flush()
 
 
+class PopulateHandler(RequestHandler):
+
+    def post(self):
+        admin_add_all.apply_async()
+        self.set_status(200)
+        self.finish()
