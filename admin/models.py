@@ -23,7 +23,7 @@ class Service(db.Base):
 
     class Meta(object):
         follow = ['skills']
-        follow_exclude = ['service_provider_id', 'trash', 'service_id', 'id']
+        follow_exclude = ['service_provider_id', 'trash', 'service_id', 'id', 'inspection']
         exclude = ['trash']
         fk = []
 

@@ -159,6 +159,26 @@ class ServiceHandler(BaseHandler):
         services = get_services(self.dbsession)
         self.send_model_response(services)
 
+    # TODO move this query to redis
+    def send_model_response(self, instance_or_query):
+        uri_kwargs = {
+            'resource_name': self.resource_name
+        }
+        models_dict = model_to_dict(
+            instance_or_query,
+            self.model_response_uris,
+            uri_kwargs
+        )
+        for obj in models_dict['objects']:
+            obj['skills'] = list(set([
+                skill['name']
+                for skill in obj['skills']
+            ]))
+        self.set_status(200)
+        self.set_header("Content-Type", "application/json")
+        self.write(json.dumps(models_dict, cls=TornadoJSONEncoder))
+        self.finish()
+
     @handle_exceptions
     def post(self):
         data = self.check_input('create')
