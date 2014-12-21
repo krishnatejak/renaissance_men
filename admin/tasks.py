@@ -65,3 +65,11 @@ def add_service(self, sid):
 
     self.r.sadd('services', service.name)
 
+@celery.task(name='admin.add.all', base=DBTask, bind=True)
+def admin_add_all(self):
+    services = self.db.query(Service.name).query(
+        Service.trash == False
+    ).all()
+
+    self.r.sadd('services', [service[0] for service in services])
+

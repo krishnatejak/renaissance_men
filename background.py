@@ -17,7 +17,15 @@ celery.conf.update(
     CELERY_IGNORE_RESULT=True,
     CELERY_ACCEPT_CONTENT=['json'],
     CELERY_CREATE_MISSING_QUEUES=False,
+    CELERY_DEFAULT_QUEUE='default',
     CELERY_QUEUES=(
+        Queue(
+            'default',
+            Exchange('default'),
+            routing_key='default',
+            delivery_mode=2,
+            durable=True
+        ),
         Queue(
             'admin.serviceprovider',
             Exchange('admin'),

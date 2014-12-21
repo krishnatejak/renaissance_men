@@ -7,6 +7,7 @@ import db
 from admin.service.serviceprovider import *
 from admin.service.job import *
 from admin.service.service import *
+from admin.models import *
 from utils import model_to_dict, TornadoJSONEncoder
 from exc import AppException
 
@@ -77,7 +78,6 @@ def handle_exceptions(function):
             })
             instance.flush()
         except Exception as e:
-            print e
             instance.set_status(500)
             instance.write({
                 'error': str(e)
@@ -126,6 +126,25 @@ class ServiceProviderHandler(BaseHandler):
         self.write('')
         self.finish()
 
+    def send_model_response(self, instance_or_query):
+        uri_kwargs = {
+            'resource_name': self.resource_name
+        }
+        models_dict = model_to_dict(
+            instance_or_query,
+            self.model_response_uris,
+            uri_kwargs
+        )
+
+        models_dict['skills'] = get_service_provider_skills(
+            self.dbsession,
+            instance_or_query.id
+        )
+
+        self.set_status(200)
+        self.set_header("Content-Type", "application/json")
+        self.write(json.dumps(models_dict, cls=TornadoJSONEncoder))
+        self.finish()
 
 class ServiceProviderVerifyHandler(BaseHandler):
     resource_name = 'serviceprovider'

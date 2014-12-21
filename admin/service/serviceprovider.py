@@ -2,6 +2,7 @@ import pyotp
 
 from admin.models import Service, ServiceProvider, ServiceSkill
 from admin import tasks
+from admin.service.service import *
 from utils import transaction, update_model_from_dict
 from exc import AppException
 import config
@@ -9,25 +10,28 @@ import config
 
 __all__ = ['create_service_provider', 'update_service_provider',
            'get_service_provider', 'delete_service_provider',
-           'initiate_verification', 'verify_otp', 'update_gcm_reg_id']
+           'initiate_verification', 'verify_otp', 'update_gcm_reg_id',
+           'get_service_provider_skills']
 
 
 @transaction
 def create_service_provider(dbsession, data):
-    service_id = data.pop('service')
-    service = dbsession.query(Service).filter(Service.id == service_id).one()
-    data['service'] = service
-    skills = data.pop('skills', [])
+    skills = data.pop('skills', {})
+
     service_provider = ServiceProvider()
     update_model_from_dict(service_provider, data)
     dbsession.add(service_provider)
     dbsession.commit()
+
     if skills:
-        update_skills(
-            dbsession, service_provider.id, service.id, skills
-        )
+        for service_name, service_skills in skills.iteritems():
+            service = get_or_create_service(dbsession, service_name)
+            update_skills(
+                dbsession, service_provider.id, service.id, service_skills
+            )
+
     tasks.add_service_provider.apply_async(
-        service_provider.id,
+        args=(service_provider.id,),
         queue=config.SERVICE_PROVIDER_QUEUE
     )
     return service_provider
@@ -45,12 +49,16 @@ def update_service_provider(dbsession, provider_id, data):
     update_model_from_dict(service_provider, data)
     dbsession.add(service_provider)
     dbsession.commit()
+
     if skills:
-        update_skills(
-            dbsession, service_provider.id, service_provider.service_id, skills
-        )
+        for service_name, service_skills in skills.iteritems():
+            service = get_or_create_service(dbsession, service_name)
+            update_skills(
+                dbsession, service_provider.id, service.id, service_skills
+            )
+
     tasks.update_service_provider.apply_async(
-        service_provider.id,
+        args=(service_provider.id,),
         queue=config.SERVICE_PROVIDER_QUEUE
     )
     return service_provider
@@ -160,3 +168,27 @@ def update_gcm_reg_id(dbsession, spid, gcm_reg_id):
     service_provider.gcm_reg_id = gcm_reg_id
     dbsession.add(service_provider)
     dbsession.commit()
+
+
+def get_service_provider_skills(dbsession, spid):
+    skills = dbsession.query(
+        ServiceSkill.service_id, ServiceSkill.name, ServiceSkill.inspection
+    ).filter(
+        ServiceSkill.service_provider_id == spid,
+        ServiceSkill.trash == False
+    )
+
+    service_skills = {}
+    for skill in skills:
+        service_name = get_service_name(dbsession, skill[0])
+        if service_name in service_skills:
+            service_skills[service_name].append({
+                'name': skill[1],
+                'inspection': skill[2]
+            })
+        else:
+            service_skills[service_name] = [{
+                'name': skill[1],
+                'inspection': skill[2]
+            }]
+    return service_skills
