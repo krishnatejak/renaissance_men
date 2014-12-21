@@ -9,18 +9,80 @@ from sms import OtpSms
 
 @celery.task(name='admin.serviceprovider.add', base=DBTask, bind=True)
 def add_service_provider(self, spid):
-    pass
+
+    service_skills = self.db.query(ServiceSkill.name, Service.name).filter(
+        ServiceSkill.trash == False, ServiceSkill.service_id == Service.id,
+        Service.trash == False, ServiceSkill.service_provider_id == spid
+    ).all()
+    for service_skill, service_name in service_skills:
+        self.r.sadd("{0}:skills".format(service_name), service_skill)
+        self.r.sadd("{0}:providers".format(service_name),spid)
+        self.r.sadd("sp:{0}:{1}:skills".format(spid, service_name),service_skill)
+
+    service_provider = self.db.query(ServiceProvider).filter(
+        ServiceProvider.trash == False, ServiceProvider.id == spid
+    ).first()
+    sp_dict = {
+        "name":service_provider.name,
+        "availability":service_provider.availability,
+        "phone_number":service_provider.phone_number,
+        "home_location":service_provider.home_location,
+        "office_location":service_provider.office_location,
+        "service_range":service_provider.service_range
+        }
+    self.r.hmset("sp:{0}".format(service_provider.id),sp_dict)
+
 
 
 @celery.task(name='admin.serviceprovider.update', base=DBTask, bind=True)
 def update_service_provider(self, spid):
-    pass
+    service_skills = self.db.query(ServiceSkill.name, Service.name).filter(
+        ServiceSkill.trash == False, ServiceSkill.service_id == Service.id,
+        Service.trash == False, ServiceSkill.service_provider_id == spid
+    ).all()
+
+    service_dict = {}
+
+    for service_skill, service_name in service_skills:
+        self.r.sadd("{0}:skills".format(service_name), service_skill)
+        self.r.sadd("{0}:providers".format(service_name),spid)
+        self.r.sadd("sp:{0}:{1}:skills".format(spid, service_name),service_skill)
+
+        if service_dict.get(service_name):
+            service_dict[service_name].append(service_skill)
+        else:
+            service_dict[service_name] = [service_skill]
+
+    for key in service_dict:
+        redis_skills = self.r.smembers("sp:{0}:{1}:skills".format(spid, key))
+        db_skills = set(service_dict.get(key))
+        deleted_skills = redis_skills - db_skills
+        if deleted_skills:
+            self.r.srem("sp:{0}:{1}:skills".format(spid, key),*deleted_skills)
+
+    service_provider = self.db.query(ServiceProvider).filter(
+        ServiceProvider.trash == False, ServiceProvider.id == spid
+    ).first()
+    sp_dict = {
+        "name":service_provider.name,
+        "availability":service_provider.availability,
+        "phone_number":service_provider.phone_number,
+        "home_location":service_provider.home_location,
+        "office_location":service_provider.office_location,
+        "service_range":service_provider.service_range
+        }
+    self.r.hmset("sp:{0}".format(service_provider.id),sp_dict)
 
 
 @celery.task(name='admin.serviceprovider.delete', base=DBTask, bind=True)
 def delete_service_provider(self, spid):
-    pass
-
+    services = self.db.query(ServiceSkill.name).filter(ServiceSkill.service_provider_id == spid,
+                                                       ServiceSkill.trash == False).all()
+    for service in services:
+        self.r.srem("{0}:providers".format(service.name),spid)
+        self.r.spop("sp:{0}:{1}:skills".format(spid, service.name))
+    sp_dict = self.r.hgetall("sp:{0}".format(spid))
+    self.r.hdel("sp:{0}".format(spid), *sp_dict)
 
 @celery.task(name='admin.serviceprovider.verify', base=DBTask, bind=True)
 def verify_service_provider(self, spid):
@@ -80,7 +142,7 @@ def admin_add_all(self):
     for service_skill, service_name, service_provider_id in service_skills:
         self.r.sadd("{0}:skills".format(service_name), service_skill)
         self.r.sadd("{0}:providers".format(service_name),service_provider_id)
-        self.r.sadd("sp:{0}:skills".format(service_provider_id),service_skill)
+        self.r.sadd("sp:{0}:{1}:skills".format(service_provider_id,service_name),service_skill)
 
     service_providers = self.db.query(ServiceProvider).filter(ServiceProvider.trash == False).all()
     for service_provider in service_providers:
