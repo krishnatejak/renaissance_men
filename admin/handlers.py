@@ -89,8 +89,7 @@ def handle_exceptions(function):
 class ServiceProviderHandler(BaseHandler):
     resource_name = 'serviceprovider'
     create_required = {'name', 'phone_number', 'address', 'home_location',
-                       'office_location', 'cost', 'service', 'experience',
-                       'skills'}
+                       'office_location', 'cost', 'experience'}
     update_ignored = {'service'}
 
     @handle_exceptions
