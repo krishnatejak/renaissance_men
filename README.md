@@ -67,6 +67,6 @@ value: hash name: service provider name
 			home_location: service provider home location
 			office_location: service provider office location
 			service_range: service provider service range
-key: sp:spid:skills
+key: sp:spid:service_name:skills
 value: set of skills
 ```
