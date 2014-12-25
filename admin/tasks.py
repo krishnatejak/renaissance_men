@@ -4,7 +4,7 @@ from background import celery
 from background import DBTask
 from admin.models import *
 import config
-from sms import OtpSms
+from admin.service.sms import OtpSms
 
 
 @celery.task(name='admin.serviceprovider.add', base=DBTask, bind=True)

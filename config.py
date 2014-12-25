@@ -20,6 +20,11 @@ CELERY_BROKER = 'amqp://guest:guest@localhost:5672//'
 
 DEBUG = True
 
+# Session settings
+SESSION_PREFIX = 'session'
+SESSION_EXPIRY = 30  # in days
+SESSION_COOKIE_NAME = 'sid'
+
 # Task Queues
 SERVICE_PROVIDER_QUEUE = 'admin.serviceprovider'
 SERVICE_QUEUE = 'admin.service'

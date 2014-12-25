@@ -4,7 +4,7 @@ from admin.handlers import *
 import config
 
 
-service_provider = Application([
+admin_application = Application([
     (r'/serviceprovider/([\d]+)?/?', ServiceProviderHandler),
     (r'/serviceprovider/([\d]+)/verify/([\d]+)/', ServiceProviderVerifyHandler),
     (r'/serviceprovider/([\d]+)/gcm/', ServiceProviderGCMHandler),

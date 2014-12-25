@@ -121,3 +121,10 @@ def generate_secret(length=32):
 def parse_json_datetime(datetime_string):
     datetime_string = datetime_string.strip()
     return datetime.datetime.strptime(datetime_string, JSON_DATETIME_FORMAT)
+
+
+def get_json_datetime(date_time=None):
+    if not date_time:
+        now = datetime.datetime.now()
+        return now.strftime(JSON_DATETIME_FORMAT)
+    return date_time.strftime(JSON_DATETIME_FORMAT)
