@@ -7,9 +7,10 @@ from utils import get_json_datetime
 
 class Session(object):
     def __init__(self, sessionid=None):
+        self.r = db.session_redis
         self._sessionid = None
         self.sessionid = sessionid
-        self.r = db.session_redis
+
 
     @property
     def sessionid(self):
@@ -20,7 +21,7 @@ class Session(object):
         if not session_id:
             self._sessionid = self.prefixed(self.generate_sid())
         else:
-            self._sessionid = self.prefixed(session_id)
+            self._sessionid = session_id
         self.__set_last_accessed()
 
     @staticmethod
@@ -35,9 +36,7 @@ class Session(object):
         exists = False
         if self.r.exists(self.sessionid):
             exists = True
-        self.r.hmset(self.sessionid, {
-            'last_accessed': get_json_datetime()
-        })
+        self.r.hset(self.sessionid, 'last_accessed', get_json_datetime())
         if not exists:
             self.r.expire(
                 self.sessionid,

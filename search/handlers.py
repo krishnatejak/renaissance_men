@@ -24,4 +24,5 @@ class SearchHandler(RequestHandler):
         return session
 
     def get(self, s=None, sk=None):
-        pass
+        self.write('search!')
+        self.finish()

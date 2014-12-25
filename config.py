@@ -10,12 +10,11 @@ DATABASES = {
     'redis': {
         'host': 'localhost',
         'port': '6379',
-        'max_connections': 2000
     }
 }
 
 OTP_SECRET = '7TT3WCJF7OIEKNYLMJSXWS3BV76RB3GI'
-
+COOKIE_SECRET = 'qsW+SmlyTnac8FHu/iLZDXKepPtAkkIDhmkLbj+AQlQ='
 CELERY_BROKER = 'amqp://guest:guest@localhost:5672//'
 
 DEBUG = True
