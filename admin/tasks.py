@@ -132,8 +132,11 @@ def admin_add_all(self):
     services = self.db.query(Service.name).filter(
         Service.trash == False
     ).all()
-
-    self.r.sadd('services', [service[0] for service in services])
+    redis_services = self.r.smembers('services')
+    for red_ser in redis_services:
+        self.r.srem("services",red_ser)
+    for service in services:
+        self.r.sadd('services', service[0])
 
     service_skills = self.db.query(
         ServiceSkill.name, Service.name, ServiceSkill.service_provider_id
