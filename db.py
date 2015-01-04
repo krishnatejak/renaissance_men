@@ -18,4 +18,12 @@ Base = declarative_base(bind=DB_ENGINE, cls=DictableModel)
 
 Session = sessionmaker(bind=DB_ENGINE)
 
-REDIS_DB = redis.Redis(**config.DATABASES['redis'])
+REDIS_CONN_POOL = redis.ConnectionPool(
+    max_connections=200,
+    **config.DATABASES['redis']
+)
+
+Redis = lambda: redis.Redis(connection_pool=REDIS_CONN_POOL)
+
+# maintain single instance for redis
+session_redis = redis.StrictRedis(**config.DATABASES['redis'])

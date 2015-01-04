@@ -7,13 +7,14 @@ import db
 from admin.service.serviceprovider import *
 from admin.service.job import *
 from admin.service.service import *
+from admin.tasks import admin_add_all
 from utils import model_to_dict, TornadoJSONEncoder
 from exc import AppException
 
 
 __all__ = ['ServiceProviderHandler', 'ServiceHandler', 'JobHandler',
            'JobStartHandler', 'JobEndHandler', 'ServiceProviderVerifyHandler',
-           'ServiceProviderGCMHandler']
+           'ServiceProviderGCMHandler', 'PopulateHandler']
 
 
 class BaseHandler(RequestHandler):
@@ -24,7 +25,7 @@ class BaseHandler(RequestHandler):
 
     def initialize(self):
         self.dbsession = db.Session()
-        self.redisdb = db.REDIS_DB
+        self.redisdb = db.Redis()
 
     def on_finish(self):
         self.dbsession.close()
@@ -77,7 +78,6 @@ def handle_exceptions(function):
             })
             instance.flush()
         except Exception as e:
-            print e
             instance.set_status(500)
             instance.write({
                 'error': str(e)
@@ -88,9 +88,7 @@ def handle_exceptions(function):
 
 class ServiceProviderHandler(BaseHandler):
     resource_name = 'serviceprovider'
-    create_required = {'name', 'phone_number', 'address', 'home_location',
-                       'office_location', 'cost', 'service', 'experience',
-                       'skills'}
+    create_required = {'name', 'phone_number'}
     update_ignored = {'service'}
 
     @handle_exceptions
@@ -126,6 +124,25 @@ class ServiceProviderHandler(BaseHandler):
         self.write('')
         self.finish()
 
+    def send_model_response(self, instance_or_query):
+        uri_kwargs = {
+            'resource_name': self.resource_name
+        }
+        models_dict = model_to_dict(
+            instance_or_query,
+            self.model_response_uris,
+            uri_kwargs
+        )
+
+        models_dict['skills'] = get_service_provider_skills(
+            self.dbsession,
+            instance_or_query.id
+        )
+
+        self.set_status(200)
+        self.set_header("Content-Type", "application/json")
+        self.write(json.dumps(models_dict, cls=TornadoJSONEncoder))
+        self.finish()
 
 class ServiceProviderVerifyHandler(BaseHandler):
     resource_name = 'serviceprovider'
@@ -133,7 +150,7 @@ class ServiceProviderVerifyHandler(BaseHandler):
     @handle_exceptions
     def post(self, spid, token):
         if not token:
-            initiate_verification(self.dbsession, self.redisdb, spid)
+            initiate_verification(self.dbsession, spid)
         else:
             verify_otp(self.dbsession, self.redisdb, spid, token)
 
@@ -150,15 +167,40 @@ class ServiceProviderGCMHandler(BaseHandler):
         self.finish()
 
 
-
 class ServiceHandler(BaseHandler):
     resource_name = 'service'
+    create_required = {'name'}
 
     @handle_exceptions
     def get(self):
         services = get_services(self.dbsession)
         self.send_model_response(services)
 
+    # TODO move this query to redis
+    def send_model_response(self, instance_or_query):
+        uri_kwargs = {
+            'resource_name': self.resource_name
+        }
+        models_dict = model_to_dict(
+            instance_or_query,
+            self.model_response_uris,
+            uri_kwargs
+        )
+        for obj in models_dict['objects']:
+            obj['skills'] = list(set([
+                skill['name']
+                for skill in obj['skills']
+            ]))
+        self.set_status(200)
+        self.set_header("Content-Type", "application/json")
+        self.write(json.dumps(models_dict, cls=TornadoJSONEncoder))
+        self.finish()
+
+    @handle_exceptions
+    def post(self):
+        data = self.check_input('create')
+        service = create_service(self.dbsession, data)
+        self.send_model_response(service)
 
 class JobHandler(BaseHandler):
     resource_name = 'job'
@@ -208,3 +250,9 @@ class JobEndHandler(BaseHandler):
         self.flush()
 
 
+class PopulateHandler(RequestHandler):
+
+    def post(self):
+        admin_add_all.apply_async()
+        self.set_status(200)
+        self.finish()

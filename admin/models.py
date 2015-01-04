@@ -16,14 +16,14 @@ class Service(db.Base):
 
     id = Column(Integer, primary_key=True)
     name = Column("name", String(256), nullable=False)
-    service_providers = relationship('ServiceProvider', backref=backref('service'))
     jobs = relationship('Job', backref=backref('service'))
     skills = relationship('ServiceSkill', backref=backref('service'))
     trash = Column("trash", Boolean, default=False)
 
     class Meta(object):
-        follow = []
-        exclude = ['id', 'trash']
+        follow = ['skills']
+        follow_exclude = ['service_provider_id', 'trash', 'service_id', 'id', 'inspection']
+        exclude = ['trash']
         fk = []
 
 
@@ -38,19 +38,19 @@ class ServiceProvider(db.Base):
     home_location = Column("home_location", ARRAY(Float, dimensions=1))
     office_location = Column("office_location", ARRAY(Float, dimensions=1))
     cost = Column("cost", Float, default=0.0)
-    service_id = Column("service", ForeignKey('service.id'))
     experience = Column("experience", Float, default=0.0)
     skills = relationship('ServiceSkill', backref=backref('service_provider'))
     jobs = relationship('Job', backref=backref('service_provider'))
     verified = Column("verified", Boolean, default=False)
     gcm_reg_id = Column("gcm_reg_id", String)
+    service_range = Column("service_range", Integer, default=5)
     trash = Column("trash", Boolean, default=False)
 
     class Meta(object):
-        follow = ['service', 'skills']
-        follow_exclude = ['service_provider_id', 'trash', 'service_id', 'id']
+        follow = []
+        follow_exclude = []
         exclude = ['id', 'trash']
-        fk = ['service_id', ]
+        fk = []
 
 
 class ServiceSkill(db.Base):
@@ -66,7 +66,7 @@ class ServiceSkill(db.Base):
     class Meta(object):
         follow = []
         follow_exclude = []
-        exclude = []
+        exclude = ['id', 'trash']
         fk = []
 
 

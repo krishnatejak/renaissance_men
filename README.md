@@ -48,3 +48,25 @@ alembic upgrade head
 source renv/bin/activate
 python renaissance_men/server.py
 ```
+
+#### redis data structures
+```
+key: services
+value: set of service names
+
+key: service_name:skills
+value: set of service skills
+
+key: service_name:providers
+value: set of service provider id
+
+key: sp:service_provider_id
+value: hash name: service provider name
+			availability: service provider availability
+			phone_number: service provider phone number
+			home_location: service provider home location
+			office_location: service provider office location
+			service_range: service provider service range
+key: sp:spid:service_name:skills
+value: set of skills
+```
