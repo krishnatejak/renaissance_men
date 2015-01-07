@@ -32,6 +32,7 @@ class ServiceProvider(db.Base):
 
     id = Column(Integer, primary_key=True)
     name = Column("name", String(512), nullable=False)
+    email = Column("email", String(256), nullable=False)
     availability = Column("availability", Boolean, default=False)
     phone_number = Column("phone_number", String(20))
     address = Column("address", String(2048))
@@ -102,7 +103,7 @@ class Job(db.Base):
 class User(db.Base):
     __tablename__ = 'user'
 
-    user_types = ('admin', 'user')
+    user_types = ('admin', 'user', 'service_provider')
 
     id = Column(Integer, primary_key=True)
     user_type = Column("user_type", Enum(*user_types, name='user_types'), default='user')
@@ -110,19 +111,7 @@ class User(db.Base):
     email = Column("email", String(256), nullable=False)
     phone_number = Column("phone", String(20), nullable=False)
     location = Column("location", ARRAY(Float, dimensions=1))
-    _password = Column("password", String(80))
     address = Column("address", String(2048))
     jobs = relationship("Job", backref=backref("user"))
 
-    @hybrid_property
-    def password(self):
-        return self._password
 
-    @password.setter
-    def password(self, raw_password):
-        bcrypt = BCRYPTPasswordManager()
-        self._password = unicode(bcrypt.encode(raw_password, rounds=12))
-
-    def check_password(self, password):
-        bcrypt = BCRYPTPasswordManager()
-        return bcrypt.check(self.password, password)

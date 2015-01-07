@@ -11,7 +11,7 @@ import config
 __all__ = ['create_service_provider', 'update_service_provider',
            'get_service_provider', 'delete_service_provider',
            'initiate_verification', 'verify_otp', 'update_gcm_reg_id',
-           'get_service_provider_skills']
+           'get_service_provider_skills', 'authenticate_service_provider']
 
 
 @transaction
@@ -192,3 +192,16 @@ def get_service_provider_skills(dbsession, spid):
                 'inspection': skill[2]
             }]
     return service_skills
+
+
+def authenticate_service_provider(dbsession, user_dict):
+    try:
+        service_provider = dbsession.query(ServiceProvider).filter(
+            ServiceProvider.email == user_dict['email']
+        ).one()
+    except:
+        service_provider = create_service_provider(dbsession, {
+            'name': user_dict['name'],
+            'email': user_dict['email']
+        })
+    return service_provider

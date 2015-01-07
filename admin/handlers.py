@@ -1,23 +1,29 @@
 import json
 
-from tornado.web import RequestHandler
-from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+import jwt
+from tornado.web import RequestHandler, asynchronous
+from tornado.auth import GoogleOAuth2Mixin
+from tornado.gen import coroutine
+from tornado import escape
 
+from session import SessionMixin
 import db
 from admin.service.serviceprovider import *
 from admin.service.job import *
 from admin.service.service import *
 from admin.tasks import admin_add_all
 from utils import model_to_dict, TornadoJSONEncoder
-from exc import AppException
+from exc import AppException, handle_exceptions
+import config
 
 
 __all__ = ['ServiceProviderHandler', 'ServiceHandler', 'JobHandler',
            'JobStartHandler', 'JobEndHandler', 'ServiceProviderVerifyHandler',
-           'ServiceProviderGCMHandler', 'PopulateHandler']
+           'ServiceProviderGCMHandler', 'PopulateHandler', 'SpGoogleAuthHandler',
+           'UserGoogleAuthHandler']
 
 
-class BaseHandler(RequestHandler):
+class BaseHandler(RequestHandler, SessionMixin):
     resource_name = None
     create_required = {}
     update_ignored = {}
@@ -60,31 +66,9 @@ class BaseHandler(RequestHandler):
         self.write(json.dumps(models_dict, cls=TornadoJSONEncoder))
         self.finish()
 
-
-def handle_exceptions(function):
-    def _wrapper(instance, *args, **kwargs):
-        try:
-            return function(instance, *args, **kwargs)
-        except AppException as ae:
-            instance.set_status(400)
-            instance.write({
-                'error': str(ae)
-            })
-            instance.flush()
-        except (NoResultFound, MultipleResultsFound):
-            instance.set_status(400)
-            instance.write({
-                'error': 'No results found'
-            })
-            instance.flush()
-        except Exception as e:
-            instance.set_status(500)
-            instance.write({
-                'error': str(e)
-            })
-            instance.flush()
-    return _wrapper
-
+    def get_current_user(self):
+        if 'user' in self.session:
+            return self.session['user']
 
 class ServiceProviderHandler(BaseHandler):
     resource_name = 'serviceprovider'
@@ -144,6 +128,7 @@ class ServiceProviderHandler(BaseHandler):
         self.write(json.dumps(models_dict, cls=TornadoJSONEncoder))
         self.finish()
 
+
 class ServiceProviderVerifyHandler(BaseHandler):
     resource_name = 'serviceprovider'
 
@@ -202,6 +187,7 @@ class ServiceHandler(BaseHandler):
         service = create_service(self.dbsession, data)
         self.send_model_response(service)
 
+
 class JobHandler(BaseHandler):
     resource_name = 'job'
     create_required = {'service_provider', 'service', 'location', 'request',
@@ -251,8 +237,72 @@ class JobEndHandler(BaseHandler):
 
 
 class PopulateHandler(RequestHandler):
-
     def post(self):
         admin_add_all.apply_async()
         self.set_status(200)
         self.finish()
+
+
+class GoogleAuthHandler(BaseHandler, GoogleOAuth2Mixin):
+
+    _OAUTH_PROFILE_URL = 'https://www.googleapis.com/oauth2/v2/userinfo'
+    REDIRECT_URL = None
+
+    def handle_authenticated_user(self, access_token, token_type):
+        print 'inside auth user'
+        http = self.get_auth_http_client()
+        http.fetch(
+            self._OAUTH_PROFILE_URL,
+            method='GET',
+            headers={'Authorization': '%s %s' % (token_type, access_token)},
+            callback=self.user_details_callback
+        )
+
+    def user_details_callback(self, response):
+        raise NotImplementedError
+
+    @coroutine
+    def get(self):
+        if self.get_argument('code', False):
+            user = yield self.get_authenticated_user(
+                redirect_uri=self.REDIRECT_URL,
+                code=self.get_argument('code'))
+            print user
+            self.session['user_type'] = 'service_provider'
+
+            self.handle_authenticated_user(
+                user['access_token'], user['token_type']
+            )
+        else:
+            yield self.authorize_redirect(
+                redirect_uri=self.REDIRECT_URL,
+                client_id=self.settings['google_oauth']['key'],
+                scope=['email', 'profile'],
+                response_type='code',
+                extra_params={'approval_prompt': 'auto'})
+
+
+class SpGoogleAuthHandler(GoogleAuthHandler):
+    REDIRECT_URL = config.GOOGLE_OAUTH_SP_REDIRECT
+
+    def user_details_callback(self, response):
+        response = escape.json_decode(response.body)
+        service_provider = authenticate_service_provider(self.dbsession, response)
+        self.session['user_id'] = service_provider.id
+
+
+
+class UserGoogleAuthHandler(GoogleAuthHandler):
+    REDIRECT_URL = config.GOOGLE_OAUTH_USER_REDIRECT
+
+    def handle_authenticated_user(self, access_token, token_type):
+        http = self.get_auth_http_client()
+        response = yield http.fetch(
+            self._OAUTH_PROFILE_URL,
+            method='GET',
+            headers={'Authorization': '%s %s' % (token_type, access_token)}
+        )
+        response = escape.json_decode(response)
+
+
+        # handle user auth response

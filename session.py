@@ -65,3 +65,18 @@ class Session(object):
         session_data = self.r.hkeys(self.sessionid)
         for key in session_data:
             yield key
+
+
+class SessionMixin(object):
+
+    @property
+    def session(self):
+        """session id should be sent as request header"""
+        if not hasattr(self, '_session'):
+            sessionid = self.request.headers.get(config.SESSION_HEADER)
+            session = Session(sessionid)
+            if not sessionid:
+                self.set_header(config.SESSION_HEADER, session.sessionid)
+            self._session = session
+
+        return self._session
