@@ -54,10 +54,18 @@ celery.conf.update(
             delivery_mode=1,
             durable=False
         ),
+        Queue(
+            'search.getdistances',
+            Exchange('admin'),
+            routing_key='search.getdistances',
+            delivery_mode=1,
+            durable=False
+        ),
 
     ),
     CELERY_IMPORTS=(
         "admin.tasks",
+        "search.tasks",
     ),
 )
 

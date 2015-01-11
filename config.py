@@ -30,6 +30,7 @@ SERVICE_PROVIDER_QUEUE = 'admin.serviceprovider'
 SERVICE_QUEUE = 'admin.service'
 JOB_QUEUE = 'admin.job'
 USER_QUEUE = 'admin.user'
+SEARCH_GET_DISTANCE_QUEUE = 'search.getdistances'
 
 PLIVO_AUTH_ID = 'MAY2UWODK4MWVHM2E3NJ'
 PLIVO_AUTH_TOKEN = 'YTljZjY2YTk4NTg1MmZhNDY4NjY2MjI1MWY1ZWM2'
