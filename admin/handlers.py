@@ -266,7 +266,6 @@ class GoogleAuthHandler(BaseHandler, GoogleOAuth2Mixin):
             user = yield self.get_authenticated_user(
                 redirect_uri=self.REDIRECT_URL,
                 code=self.get_argument('code'))
-            print user
             self.session['user_type'] = 'service_provider'
 
             self.handle_authenticated_user(
