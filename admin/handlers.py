@@ -249,7 +249,6 @@ class GoogleAuthHandler(BaseHandler, GoogleOAuth2Mixin):
     REDIRECT_URL = None
 
     def handle_authenticated_user(self, access_token, token_type):
-        print 'inside auth user'
         http = self.get_auth_http_client()
         http.fetch(
             self._OAUTH_PROFILE_URL,
