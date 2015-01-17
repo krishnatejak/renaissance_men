@@ -14,7 +14,7 @@ from exc import AppException
 
 __all__ = ['ServiceProviderHandler', 'ServiceHandler', 'JobHandler',
            'JobStartHandler', 'JobEndHandler', 'ServiceProviderVerifyHandler',
-           'ServiceProviderGCMHandler', 'PopulateHandler']
+           'ServiceProviderGCMHandler', 'PopulateHandler', 'ServiceProviderJobHandler']
 
 
 class BaseHandler(RequestHandler):
@@ -249,6 +249,26 @@ class JobEndHandler(BaseHandler):
         self.set_status(200)
         self.flush()
 
+class JobAcceptHandler(BaseHandler):
+    resource_name = 'job'
+    model_response_uris = {}
+
+    @handle_exceptions
+    def post(self, jid):
+        set_job_accepted(self.dbsession, jid)
+        self.set_status(200)
+        self.flush()
+
+class JobRejectHandler(BaseHandler):
+    resource_name = 'job'
+    model_response_uris = {}
+
+    @handle_exceptions
+    def post(self, jid):
+        set_job_rejected(self.dbsession, jid)
+        self.set_status(200)
+        self.flush()
+
 
 class PopulateHandler(RequestHandler):
 
@@ -256,3 +276,11 @@ class PopulateHandler(RequestHandler):
         admin_add_all.apply_async()
         self.set_status(200)
         self.finish()
+
+class ServiceProviderJobHandler(BaseHandler):
+    @handle_exceptions
+    def get(self, spid):
+        status =  self.get_argument("status", "").split(",")
+        jobs = fetch_jobs_by_status(self.dbsession, spid, status)
+        self.send_model_response(jobs)
+

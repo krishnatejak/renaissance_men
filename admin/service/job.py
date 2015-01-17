@@ -8,7 +8,7 @@ from exc import AppException
 from admin import tasks
 import config
 
-__all__ = ['create_job', 'get_job', 'set_job_ended', 'set_job_started']
+__all__ = ['create_job', 'get_job', 'set_job_ended', 'set_job_started', 'set_job_accepted', 'set_job_rejected']
 
 
 @transaction
@@ -72,6 +72,36 @@ def set_job_ended(dbsession, jid):
         raise AppException('Cannot end ended job')
     job.ended = datetime.utcnow()
     job.status = 'complete'
+    dbsession.add(job)
+    dbsession.commit()
+
+    tasks.job_complete.apply_async(
+        job.id,
+        queue=config.JOB_QUEUE
+    )
+
+@transaction
+def set_job_accepted(dbsession, jid):
+    job = dbsession.query(Job).filter(Job.id == jid).one()
+    if job.ended:
+        raise AppException('Cannot end ended job')
+    job.ended = datetime.utcnow()
+    job.status = 'accepted'
+    dbsession.add(job)
+    dbsession.commit()
+
+    tasks.job_complete.apply_async(
+        job.id,
+        queue=config.JOB_QUEUE
+    )
+
+@transaction
+def set_job_rejected(dbsession, jid):
+    job = dbsession.query(Job).filter(Job.id == jid).one()
+    if job.ended:
+        raise AppException('Cannot end ended job')
+    job.ended = datetime.utcnow()
+    job.status = 'rejected'
     dbsession.add(job)
     dbsession.commit()
 
