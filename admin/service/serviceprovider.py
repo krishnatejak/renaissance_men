@@ -11,7 +11,8 @@ import config
 __all__ = ['create_service_provider', 'update_service_provider',
            'get_service_provider', 'delete_service_provider',
            'initiate_verification', 'verify_otp', 'update_gcm_reg_id',
-           'get_service_provider_skills', 'fetch_jobs_by_status']
+           'get_service_provider_skills', 'fetch_jobs_by_status',
+           'authenticate_service_provider']
 
 
 @transaction
@@ -198,3 +199,14 @@ def fetch_jobs_by_status(dbsession, spid, status):
             Job.service_provider_id == spid,
             Job.status.in_(status))
 
+def authenticate_service_provider(dbsession, user_dict):
+    try:
+        service_provider = dbsession.query(ServiceProvider).filter(
+            ServiceProvider.email == user_dict['email']
+        ).one()
+    except:
+        service_provider = create_service_provider(dbsession, {
+            'name': user_dict['name'],
+            'email': user_dict['email']
+        })
+    return service_provider

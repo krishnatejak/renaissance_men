@@ -1,8 +1,13 @@
+from search import tasks
+import config
 
-
-
-def search(redis, service, skill):
+def search(redis, service, skill,latitude, longitude, session):
     try:
+        if latitude and longitude:
+            tasks.get_sp_within_distance.apply_async(
+                args=(service,latitude,longitude, session),
+                queue=config.SEARCH_GET_DISTANCE_QUEUE
+            )
         if not service:
             services = list(redis.smembers("services"))
             service_dict = {'services':services}
@@ -12,7 +17,8 @@ def search(redis, service, skill):
             skills_list = list(skills)
             return {service:skills_list}
         else:
-            service_providers = list(redis.smembers("{0}:providers".format(service)))
+            sps = redis.hget(session,'search_id:{0}'.format(service))
+            service_providers = sps.split(',')
             sp_list = []
             for provider_id in service_providers:
                 skills = list(redis.smembers("sp:{0}:{1}:skills".format(provider_id,service)))
