@@ -1,4 +1,5 @@
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+from tornado.web import HTTPError
 
 
 class AppException(Exception):
@@ -21,6 +22,8 @@ def handle_exceptions(function):
                 'error': 'No results found'
             })
             instance.flush()
+        except HTTPError as he:
+            raise he
         except Exception as e:
             instance.set_status(500)
             instance.write({

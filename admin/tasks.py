@@ -115,7 +115,7 @@ def job_complete(self, jid):
 
 
 @celery.task(name='admin.user.create')
-def user_create(name, user_name, email, password):
+def user_create(uid):
     pass
 
 
