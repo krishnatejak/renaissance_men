@@ -22,6 +22,5 @@ admin_application = Application(
         "key": config.GOOGLE_OAUTH2_CLIENT_ID,
         "secret": config.GOOGLE_OAUTH2_CLIENT_SECRET,
     },
-    login_url='',
     debug=config.DEBUG
 )

@@ -77,6 +77,9 @@ class ServiceProviderHandler(BaseHandler):
     create_required = {'name', 'phone_number'}
     update_ignored = {'service'}
 
+    def get_login_url(self):
+        return '/serviceprovider/auth/google/'
+
     @authenticated
     @handle_exceptions
     def put(self, spid):
@@ -129,6 +132,9 @@ class ServiceProviderHandler(BaseHandler):
 class ServiceProviderVerifyHandler(BaseHandler):
     resource_name = 'serviceprovider'
 
+    def get_login_url(self):
+        return '/serviceprovider/auth/google/'
+
     @authenticated
     @handle_exceptions
     def post(self, spid, token):
@@ -141,6 +147,9 @@ class ServiceProviderVerifyHandler(BaseHandler):
 class ServiceProviderGCMHandler(BaseHandler):
     resource_name = 'serviceprovider'
     create_required = {'gcm_reg_id'}
+
+    def get_login_url(self):
+        return '/serviceprovider/auth/google/'
 
     @authenticated
     @handle_exceptions
