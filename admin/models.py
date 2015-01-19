@@ -115,3 +115,15 @@ class User(db.Base):
     jobs = relationship("Job", backref=backref("user"))
 
 
+class Signupemail(db.Base):
+    __tablename__ = 'signupemail'
+
+    id = Column(Integer, primary_key=True)
+    email = Column("email", String(256), nullable=False)
+    trash = Column("trash", Boolean, default=False)
+
+    class Meta(object):
+        follow = []
+        follow_exclude = []
+        exclude = ['id', 'trash']
+        fk = []

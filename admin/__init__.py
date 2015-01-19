@@ -15,7 +15,8 @@ admin_application = Application(
         (r'/job/([\d]+)/end/', JobEndHandler),
         (r'/populate/all/', PopulateHandler),
         (r'/serviceprovider/auth/google/', SpGoogleAuthHandler),
-        (r'/user/auth/google/', UserGoogleAuthHandler)
+        (r'/user/auth/google/', UserGoogleAuthHandler),
+        (r'/signup/?', SignupEmail)
     ],
     google_oauth={
         "key": config.GOOGLE_OAUTH2_CLIENT_ID,

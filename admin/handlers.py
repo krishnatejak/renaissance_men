@@ -11,6 +11,7 @@ from admin.service.serviceprovider import *
 from admin.service.job import *
 from admin.service.service import *
 from admin.service.user import *
+from admin.service.signup import *
 from admin.tasks import admin_add_all
 from utils import model_to_dict, TornadoJSONEncoder
 from exc import AppException, handle_exceptions
@@ -20,7 +21,7 @@ import config
 __all__ = ['ServiceProviderHandler', 'ServiceHandler', 'JobHandler',
            'JobStartHandler', 'JobEndHandler', 'ServiceProviderVerifyHandler',
            'ServiceProviderGCMHandler', 'PopulateHandler', 'SpGoogleAuthHandler',
-           'UserGoogleAuthHandler']
+           'UserGoogleAuthHandler', 'SignupEmail']
 
 
 class BaseHandler(RequestHandler, SessionMixin):
@@ -293,3 +294,19 @@ class UserGoogleAuthHandler(GoogleAuthHandler):
         response = escape.json_decode(response.body)
         user = authenticate_user(self.dbsession, response)
         self.session['user_id'] = user.id
+
+class SignupEmail(BaseHandler):
+    resource_name = 'signup'
+    create_required = {'email'}
+
+    @handle_exceptions
+    def post(self):
+        data = self.check_input('create')
+        signupemail = save_signup_email(self.dbsession, data['email'])
+        email_dict = {
+            "email" : signupemail.email
+        }
+        self.set_status(200)
+        self.set_header("Content-Type", "application/json")
+        self.write(json.dumps(email_dict))
+        self.finish()
