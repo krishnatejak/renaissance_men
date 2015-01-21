@@ -10,4 +10,4 @@ echo "starting tornado..."
 
 cd ${APP_DIR}
 
-exec python service.py
+exec python server.py
