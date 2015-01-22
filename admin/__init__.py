@@ -6,17 +6,17 @@ import config
 
 admin_application = Application(
     [
-        (r'/serviceprovider/([\d]+)?/?', ServiceProviderHandler),
-        (r'/serviceprovider/([\d]+)/verify/([\d]+)/', ServiceProviderVerifyHandler),
-        (r'/serviceprovider/([\d]+)/gcm/', ServiceProviderGCMHandler),
-        (r'/service/', ServiceHandler),
-        (r'/job/([\d]+)?/?', JobHandler),
-        (r'/job/([\d]+)/start/', JobStartHandler),
-        (r'/job/([\d]+)/end/', JobEndHandler),
-        (r'/populate/all/', PopulateHandler),
-        (r'/serviceprovider/auth/google/', SpGoogleAuthHandler),
-        (r'/user/auth/google/', UserGoogleAuthHandler),
-        (r'/signup/?', SignupEmail)
+        (r'/admin/serviceprovider/([\d]+)?/?', ServiceProviderHandler),
+        (r'/admin/serviceprovider/([\d]+)/verify/([\d]+)/', ServiceProviderVerifyHandler),
+        (r'/admin/serviceprovider/([\d]+)/gcm/', ServiceProviderGCMHandler),
+        (r'/admin/service/', ServiceHandler),
+        (r'/admin/job/([\d]+)?/?', JobHandler),
+        (r'/admin/job/([\d]+)/start/', JobStartHandler),
+        (r'/admin/job/([\d]+)/end/', JobEndHandler),
+        (r'/admin/populate/all/', PopulateHandler),
+        (r'/admin/serviceprovider/auth/google/', SpGoogleAuthHandler),
+        (r'/admin/user/auth/google/', UserGoogleAuthHandler),
+        (r'/admin/signup/?', SignupEmail)
     ],
     google_oauth={
         "key": config.GOOGLE_OAUTH2_CLIENT_ID,
