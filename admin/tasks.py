@@ -165,3 +165,7 @@ def admin_add_all(self):
             }
         self.r.hmset("sp:{0}".format(service_provider.id),sp_dict)
 
+
+@celery.task(name='admin.notify.gcm')
+def admin_notify_gcm(msg, *gcm_reg_ids):
+    pass
