@@ -44,3 +44,5 @@ GOOGLE_OAUTH2_CLIENT_ID = '388912374776-ag2qu3vvvumlim94tpkqs3e6jn4munmg.apps.go
 GOOGLE_OAUTH_SP_REDIRECT = 'https://accurox.com/api/serviceprovider/auth/google/'
 GOOGLE_OAUTH_USER_REDIRECT = 'https://accurox.com/api/user/auth/google/'
 
+#Google API Key
+GOOGLE_GCM_API_KEY = 'AIzaSyBs0_M1TNHMMkIVv6k4-kcGJsrRYsUHm5Y'

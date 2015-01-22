@@ -1,4 +1,5 @@
 import pyotp
+import gcmclient
 
 from background import celery
 from background import DBTask
@@ -168,4 +169,6 @@ def admin_add_all(self):
 
 @celery.task(name='admin.notify.gcm')
 def admin_notify_gcm(msg, *gcm_reg_ids):
-    pass
+    gcm = gcmclient.GCM(config.GOOGLE_GCM_API_KEY)
+    multicast_msg = gcmclient.JSONMessage(gcm_reg_ids, msg)
+    gcm.send(multicast_msg)
