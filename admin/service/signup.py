@@ -3,13 +3,15 @@ from admin.models import Signupemail
 from sqlalchemy import func
 
 @transaction
-def save_signup_email(dbsession, email_address):
+def save_signup_email(dbsession, email_address, feedback=None):
     try:
         signupemail = dbsession.query(Signupemail).filter(Signupemail.email == func.lower(email_address)).one()
+        signupemail.feedback = feedback
     except:
         signupemail = Signupemail()
         signupemail.email = func.lower(email_address)
-        dbsession.add(signupemail)
-        dbsession.commit()
+        signupemail.feedback = feedback
+    dbsession.add(signupemail)
+    dbsession.commit()
 
     return signupemail
