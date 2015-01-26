@@ -276,6 +276,14 @@ class GoogleAuthHandler(BaseHandler, GoogleOAuth2Mixin):
             self.handle_authenticated_user(
                 user['access_token'], user['token_type']
             )
+        elif all([
+            self.get_argument('access_token', False),
+            self.get_argument('token_type', False)
+        ]):
+            self.handle_authenticated_user(
+                self.get_argument('access_token'),
+                self.get_argument('token_type')
+            )
         else:
             yield self.authorize_redirect(
                 redirect_uri=self.REDIRECT_URL,
