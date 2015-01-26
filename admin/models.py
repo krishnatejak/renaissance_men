@@ -120,6 +120,7 @@ class Signupemail(db.Base):
 
     id = Column(Integer, primary_key=True)
     email = Column("email", String(256), nullable=False)
+    feedback = Column("feedback", String(2048))
     trash = Column("trash", Boolean, default=False)
 
     class Meta(object):
