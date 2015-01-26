@@ -37,8 +37,8 @@ PLIVO_AUTH_TOKEN = 'YTljZjY2YTk4NTg1MmZhNDY4NjY2MjI1MWY1ZWM2'
 PLIVO_NUMBER = ''
 
 # Google OAuth credentials
-GOOGLE_OAUTH2_CLIENT_SECRET = 'OzxkOyyOssjIdLsWcnY4Fpmy'
-GOOGLE_OAUTH2_CLIENT_ID = '388912374776-ag2qu3vvvumlim94tpkqs3e6jn4munmg.apps.googleusercontent.com'
+GOOGLE_OAUTH2_CLIENT_SECRET = '_IrSZMA2a6uweNyUdXZA-KEz '
+GOOGLE_OAUTH2_CLIENT_ID = '1003714066979-0jut8h3vr7kf3t44bia55k45nbpmv1pg.apps.googleusercontent.com'
 
 # Auth redirect urls
 GOOGLE_OAUTH_SP_REDIRECT = 'https://accurox.com/api/serviceprovider/auth/google/'
