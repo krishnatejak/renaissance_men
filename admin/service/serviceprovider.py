@@ -1,6 +1,6 @@
 import pyotp
 
-from admin.models import Service, ServiceProvider, ServiceSkill
+from admin.models import Service, ServiceProvider, ServiceSkill, Job
 from admin import tasks
 from admin.service.service import *
 from utils import transaction, update_model_from_dict
@@ -11,7 +11,8 @@ import config
 __all__ = ['create_service_provider', 'update_service_provider',
            'get_service_provider', 'delete_service_provider',
            'initiate_verification', 'verify_otp', 'update_gcm_reg_id',
-           'get_service_provider_skills', 'authenticate_service_provider']
+           'get_service_provider_skills', 'fetch_jobs_by_status',
+           'authenticate_service_provider']
 
 
 @transaction
@@ -193,6 +194,10 @@ def get_service_provider_skills(dbsession, spid):
             }]
     return service_skills
 
+def fetch_jobs_by_status(dbsession, spid, status):
+    return dbsession.query(Job).filter(
+            Job.service_provider_id == spid,
+            Job.status.in_(status))
 
 def authenticate_service_provider(dbsession, user_dict):
     try:

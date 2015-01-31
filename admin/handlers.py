@@ -22,8 +22,8 @@ import config
 
 __all__ = ['ServiceProviderHandler', 'ServiceHandler', 'JobHandler',
            'JobStartHandler', 'JobEndHandler', 'ServiceProviderVerifyHandler',
-           'ServiceProviderGCMHandler', 'PopulateHandler', 'SpGoogleAuthHandler',
-           'UserGoogleAuthHandler', 'SignupEmail']
+           'ServiceProviderGCMHandler', 'PopulateHandler', 'SpGoogleAuthHandler', 
+           'ServiceProviderJobHandler', 'UserGoogleAuthHandler', 'SignupEmail']
 
 
 class BaseHandler(RequestHandler, SessionMixin):
@@ -241,6 +241,26 @@ class JobEndHandler(BaseHandler):
         self.set_status(200)
         self.flush()
 
+class JobAcceptHandler(BaseHandler):
+    resource_name = 'job'
+    model_response_uris = {}
+
+    @handle_exceptions
+    def post(self, jid):
+        set_job_accepted(self.dbsession, jid)
+        self.set_status(200)
+        self.flush()
+
+class JobRejectHandler(BaseHandler):
+    resource_name = 'job'
+    model_response_uris = {}
+
+    @handle_exceptions
+    def post(self, jid):
+        set_job_rejected(self.dbsession, jid)
+        self.set_status(200)
+        self.flush()
+
 
 class PopulateHandler(RequestHandler):
     def post(self):
@@ -248,6 +268,12 @@ class PopulateHandler(RequestHandler):
         self.set_status(200)
         self.finish()
 
+class ServiceProviderJobHandler(BaseHandler):
+    @handle_exceptions
+    def get(self, spid):
+        status =  self.get_argument("status", "").split(",")
+        jobs = fetch_jobs_by_status(self.dbsession, spid, status)
+        self.send_model_response(jobs)
 
 class GoogleAuthHandler(BaseHandler, GoogleOAuth2Mixin):
 
@@ -297,7 +323,6 @@ class SpGoogleAuthHandler(GoogleAuthHandler):
             self.session['user_id'] = service_provider.id
         else:
             self.set_status(400)
-
 
 class UserGoogleAuthHandler(GoogleAuthHandler):
     REDIRECT_URL = config.GOOGLE_OAUTH_USER_REDIRECT
