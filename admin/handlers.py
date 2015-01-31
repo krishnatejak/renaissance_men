@@ -8,6 +8,7 @@ from tornado import escape
 from session import SessionMixin
 
 from oauth2client import client
+from oauth2client import crypt
 import db
 from admin.service.serviceprovider import *
 from admin.service.job import *
@@ -318,9 +319,12 @@ class SpGoogleAuthHandler(GoogleAuthHandler):
     def post(self):
         data = json.loads(self.request.body)
         if data.has_key('access_token'):
-            details = client.verify_id_token(data['access_token'], config.GOOGLE_OAUTH2_CLIENT_ID)
-            service_provider = authenticate_service_provider(self.dbsession, details)
-            self.session['user_id'] = service_provider.id
+            try:
+                details = client.verify_id_token(data['access_token'], config.GOOGLE_OAUTH2_CLIENT_ID)
+                service_provider = authenticate_service_provider(self.dbsession, details)
+                self.session['user_id'] = service_provider.id
+            except crypt.AppIdentityError:
+                self.set_status(403)
         else:
             self.set_status(400)
 
