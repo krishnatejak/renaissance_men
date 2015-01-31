@@ -6,6 +6,8 @@ from tornado.gen import coroutine
 from tornado import escape
 
 from session import SessionMixin
+
+from oauth2client import client
 import db
 from admin.service.serviceprovider import *
 from admin.service.job import *
@@ -276,14 +278,6 @@ class GoogleAuthHandler(BaseHandler, GoogleOAuth2Mixin):
             self.handle_authenticated_user(
                 user['access_token'], user['token_type']
             )
-        elif all([
-            self.get_argument('access_token', False),
-            self.get_argument('token_type', False)
-        ]):
-            self.handle_authenticated_user(
-                self.get_argument('access_token'),
-                self.get_argument('token_type')
-            )
         else:
             yield self.authorize_redirect(
                 redirect_uri=self.REDIRECT_URL,
@@ -294,13 +288,15 @@ class GoogleAuthHandler(BaseHandler, GoogleOAuth2Mixin):
 
 
 class SpGoogleAuthHandler(GoogleAuthHandler):
-    REDIRECT_URL = config.GOOGLE_OAUTH_SP_REDIRECT
-    USER_TYPE = 'service_provider'
-
-    def user_details_callback(self, response):
-        response = escape.json_decode(response.body)
-        service_provider = authenticate_service_provider(self.dbsession, response)
-        self.session['user_id'] = service_provider.id
+    @coroutine
+    def post(self):
+        data = json.loads(self.request.body)
+        if data.has_key('access_token'):
+            details = client.verify_id_token(data['access_token'], config.GOOGLE_OAUTH2_CLIENT_ID)
+            service_provider = authenticate_service_provider(self.dbsession, details)
+            self.session['user_id'] = service_provider.id
+        else:
+            self.set_status(400)
 
 
 class UserGoogleAuthHandler(GoogleAuthHandler):

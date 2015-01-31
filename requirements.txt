@@ -27,3 +27,5 @@ requests==2.5.0
 gcm-client==0.1.4
 plivo==0.9.6
 geopy==1.7.1
+oauth2client==1.4.6
+pyopenssl=0.14
