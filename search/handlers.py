@@ -24,6 +24,6 @@ class SearchHandler(RequestHandler, SessionMixin):
         else:
             latitude = None
             longitude = None
-        data = search(self.r, service, skill, latitude, longitude, self.session.sessionid)
+        data = handle_search(self.r, service, skill, latitude, longitude, self.session.sessionid)
         self.write(json.dumps(data))
         self.finish()

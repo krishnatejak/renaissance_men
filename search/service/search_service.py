@@ -1,7 +1,9 @@
 from search import tasks
 import config
 
-def search(redis, service, skill,latitude, longitude, session):
+__all__ = ['handle_search']
+
+def handle_search(redis, service, skill,latitude, longitude, session):
     try:
         if latitude and longitude:
             tasks.get_sp_within_distance.apply_async(

@@ -1,4 +1,5 @@
 import pyotp
+import gcmclient
 
 from background import celery
 from background import DBTask
@@ -115,7 +116,7 @@ def job_complete(self, jid):
 
 
 @celery.task(name='admin.user.create')
-def user_create(name, user_name, email, password):
+def user_create(uid):
     pass
 
 
@@ -165,3 +166,9 @@ def admin_add_all(self):
             }
         self.r.hmset("sp:{0}".format(service_provider.id),sp_dict)
 
+
+@celery.task(name='admin.notify.gcm')
+def admin_notify_gcm(msg, *gcm_reg_ids):
+    gcm = gcmclient.GCM(config.GOOGLE_GCM_API_KEY)
+    multicast_msg = gcmclient.JSONMessage(gcm_reg_ids, msg)
+    gcm.send(multicast_msg)

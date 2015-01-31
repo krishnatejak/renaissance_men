@@ -1,16 +1,19 @@
 import json
 
-import jwt
-from tornado.web import RequestHandler, asynchronous
+from tornado.web import RequestHandler, authenticated
 from tornado.auth import GoogleOAuth2Mixin
 from tornado.gen import coroutine
 from tornado import escape
 
 from session import SessionMixin
+
+from oauth2client import client
 import db
 from admin.service.serviceprovider import *
 from admin.service.job import *
 from admin.service.service import *
+from admin.service.user import *
+from admin.service.signup import *
 from admin.tasks import admin_add_all
 from utils import model_to_dict, TornadoJSONEncoder
 from exc import AppException, handle_exceptions
@@ -19,8 +22,8 @@ import config
 
 __all__ = ['ServiceProviderHandler', 'ServiceHandler', 'JobHandler',
            'JobStartHandler', 'JobEndHandler', 'ServiceProviderVerifyHandler',
-           'ServiceProviderGCMHandler', 'PopulateHandler', 'ServiceProviderJobHandler',
-           'SpGoogleAuthHandler', 'UserGoogleAuthHandler']
+           'ServiceProviderGCMHandler', 'PopulateHandler', 'SpGoogleAuthHandler', 
+           'ServiceProviderJobHandler', 'UserGoogleAuthHandler', 'SignupEmail']
 
 
 class BaseHandler(RequestHandler, SessionMixin):
@@ -67,42 +70,41 @@ class BaseHandler(RequestHandler, SessionMixin):
         self.finish()
 
     def get_current_user(self):
-        if 'user' in self.session:
-            return self.session['user']
+        if 'user_id' in self.session and 'user_type' in self.session:
+            return '%s:%s' % (self.session['user_type'], self.session['user_id'])
+
 
 class ServiceProviderHandler(BaseHandler):
     resource_name = 'serviceprovider'
     create_required = {'name', 'phone_number'}
     update_ignored = {'service'}
 
-    @handle_exceptions
-    def post(self, spid):
-        if spid:
-            raise AppException('Cannot create with Id')
-        data = self.check_input('create')
-        service_provider = create_service_provider(self.dbsession, data)
-        self.send_model_response(service_provider)
+    def get_login_url(self):
+        return '/api/serviceprovider/auth/google/'
 
+    @authenticated
     @handle_exceptions
     def put(self, spid):
-        if not spid:
-            raise AppException('Cannot update without Id')
+        if spid != self.session['user_id']:
+            raise AppException('Action not Allowed')
         data = self.check_input('update')
         service_provider = update_service_provider(self.dbsession, spid,
                                                    data)
         self.send_model_response(service_provider)
 
+    @authenticated
     @handle_exceptions
     def get(self, spid):
-        if not spid:
-            raise AppException('Cannot fetch without Id')
+        if spid != self.session['user_id']:
+            raise AppException('Action not Allowed')
         service_provider = get_service_provider(self.dbsession, spid)
         self.send_model_response(service_provider)
 
+    @authenticated
     @handle_exceptions
     def delete(self, spid):
-        if not spid:
-            raise AppException('Cannot delete without Id')
+        if spid != self.session['user_id']:
+            raise AppException('Action not Allowed')
         is_deleted = get_service_provider(self.dbsession, spid)
         self.set_status(204)
         self.write('')
@@ -132,6 +134,10 @@ class ServiceProviderHandler(BaseHandler):
 class ServiceProviderVerifyHandler(BaseHandler):
     resource_name = 'serviceprovider'
 
+    def get_login_url(self):
+        return '/api/serviceprovider/auth/google/'
+
+    @authenticated
     @handle_exceptions
     def post(self, spid, token):
         if not token:
@@ -144,6 +150,10 @@ class ServiceProviderGCMHandler(BaseHandler):
     resource_name = 'serviceprovider'
     create_required = {'gcm_reg_id'}
 
+    def get_login_url(self):
+        return '/api/serviceprovider/auth/google/'
+
+    @authenticated
     @handle_exceptions
     def post(self, spid):
         data = self.check_input('create')
@@ -156,6 +166,7 @@ class ServiceHandler(BaseHandler):
     resource_name = 'service'
     create_required = {'name'}
 
+    @authenticated
     @handle_exceptions
     def get(self):
         services = get_services(self.dbsession)
@@ -181,12 +192,6 @@ class ServiceHandler(BaseHandler):
         self.write(json.dumps(models_dict, cls=TornadoJSONEncoder))
         self.finish()
 
-    @handle_exceptions
-    def post(self):
-        data = self.check_input('create')
-        service = create_service(self.dbsession, data)
-        self.send_model_response(service)
-
 
 class JobHandler(BaseHandler):
     resource_name = 'job'
@@ -200,6 +205,7 @@ class JobHandler(BaseHandler):
         'end': '/{resource_name}/{id}/end/'
     }
 
+    #TODO job should not be created from here
     @handle_exceptions
     def post(self, jid):
         if jid:
@@ -273,8 +279,10 @@ class GoogleAuthHandler(BaseHandler, GoogleOAuth2Mixin):
 
     _OAUTH_PROFILE_URL = 'https://www.googleapis.com/oauth2/v2/userinfo'
     REDIRECT_URL = None
+    USER_TYPE = None
 
     def handle_authenticated_user(self, access_token, token_type):
+        self.session['user_type'] = self.USER_TYPE
         http = self.get_auth_http_client()
         http.fetch(
             self._OAUTH_PROFILE_URL,
@@ -292,7 +300,6 @@ class GoogleAuthHandler(BaseHandler, GoogleOAuth2Mixin):
             user = yield self.get_authenticated_user(
                 redirect_uri=self.REDIRECT_URL,
                 code=self.get_argument('code'))
-            self.session['user_type'] = 'service_provider'
 
             self.handle_authenticated_user(
                 user['access_token'], user['token_type']
@@ -307,25 +314,38 @@ class GoogleAuthHandler(BaseHandler, GoogleOAuth2Mixin):
 
 
 class SpGoogleAuthHandler(GoogleAuthHandler):
-    REDIRECT_URL = config.GOOGLE_OAUTH_SP_REDIRECT
-
-    def user_details_callback(self, response):
-        response = escape.json_decode(response.body)
-        service_provider = authenticate_service_provider(self.dbsession, response)
-        self.session['user_id'] = service_provider.id
-
+    @coroutine
+    def post(self):
+        data = json.loads(self.request.body)
+        if data.has_key('access_token'):
+            details = client.verify_id_token(data['access_token'], config.GOOGLE_OAUTH2_CLIENT_ID)
+            service_provider = authenticate_service_provider(self.dbsession, details)
+            self.session['user_id'] = service_provider.id
+        else:
+            self.set_status(400)
 
 class UserGoogleAuthHandler(GoogleAuthHandler):
     REDIRECT_URL = config.GOOGLE_OAUTH_USER_REDIRECT
+    USER_TYPE = 'user'
 
-    def handle_authenticated_user(self, access_token, token_type):
-        http = self.get_auth_http_client()
-        response = yield http.fetch(
-            self._OAUTH_PROFILE_URL,
-            method='GET',
-            headers={'Authorization': '%s %s' % (token_type, access_token)}
-        )
-        response = escape.json_decode(response)
+    def user_details_callback(self, response):
+        response = escape.json_decode(response.body)
+        user = authenticate_user(self.dbsession, response)
+        self.session['user_id'] = user.id
 
+class SignupEmail(BaseHandler):
+    resource_name = 'signup'
+    create_required = {'email'}
 
-        # handle user auth response
+    @handle_exceptions
+    def post(self):
+        data = self.check_input('create')
+        signupemail = save_signup_email(self.dbsession, data['email'], feedback=data.get('feedback'))
+        email_dict = {
+            "email" : signupemail.email,
+            "feedback":signupemail.feedback
+        }
+        self.set_status(200)
+        self.set_header("Content-Type", "application/json")
+        self.write(json.dumps(email_dict))
+        self.finish()

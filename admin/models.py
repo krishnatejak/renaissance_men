@@ -109,9 +109,22 @@ class User(db.Base):
     user_type = Column("user_type", Enum(*user_types, name='user_types'), default='user')
     name = Column("name", String(1024), nullable=False)
     email = Column("email", String(256), nullable=False)
-    phone_number = Column("phone", String(20), nullable=False)
+    phone_number = Column("phone", String(20))
     location = Column("location", ARRAY(Float, dimensions=1))
     address = Column("address", String(2048))
     jobs = relationship("Job", backref=backref("user"))
 
 
+class Signupemail(db.Base):
+    __tablename__ = 'signupemail'
+
+    id = Column(Integer, primary_key=True)
+    email = Column("email", String(256), nullable=False)
+    feedback = Column("feedback", String(2048))
+    trash = Column("trash", Boolean, default=False)
+
+    class Meta(object):
+        follow = []
+        follow_exclude = []
+        exclude = ['id', 'trash']
+        fk = []
