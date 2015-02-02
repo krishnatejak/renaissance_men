@@ -315,7 +315,6 @@ class GoogleAuthHandler(BaseHandler, GoogleOAuth2Mixin):
 
 
 class SpGoogleAuthHandler(GoogleAuthHandler):
-    @coroutine
     def post(self):
         data = json.loads(self.request.body)
         if data.has_key('access_token'):
@@ -323,6 +322,7 @@ class SpGoogleAuthHandler(GoogleAuthHandler):
                 details = client.verify_id_token(data['access_token'], config.GOOGLE_OAUTH2_CLIENT_ID)
                 service_provider = authenticate_service_provider(self.dbsession, details)
                 self.session['user_id'] = service_provider.id
+                self.send_model_response(service_provider)
             except crypt.AppIdentityError:
                 self.set_status(403)
         else:

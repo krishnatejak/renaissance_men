@@ -50,7 +50,7 @@ class ServiceProvider(db.Base):
     class Meta(object):
         follow = []
         follow_exclude = []
-        exclude = ['id', 'trash']
+        exclude = ['trash']
         fk = []
 
 
