@@ -92,11 +92,11 @@ def verify_service_provider(self, spid):
     ).one()
 
     count = self.r.incr('otp:count')
-    self.r.set('otp:' + spid, count)
+    self.r.set('otp:' + str(spid), count)
     hotp = pyotp.HOTP(config.OTP_SECRET)
     otp = hotp.at(count)
 
-    otp_sms = OtpSms(service_provider.phone_number, otp)
+    otp_sms = OtpSms(service_provider.phone_number, "OTP for registration with Sevame is " + str(otp))
     otp_sms.send_sms()
 
 

@@ -89,7 +89,7 @@ def delete_service_provider(dbsession, provider_id):
     dbsession.add(service_provider)
     dbsession.commit()
     tasks.delete_service_provider.apply_async(
-        service_provider.id,
+        (service_provider.id,),
         queue=config.SERVICE_PROVIDER_QUEUE
     )
     return True
@@ -98,7 +98,7 @@ def delete_service_provider(dbsession, provider_id):
 def initiate_verification(dbsession, spid, phone_number):
     service_provider = dbsession.query(ServiceProvider).filter(
         ServiceProvider.id == spid,
-        Service.trash == False
+        ServiceProvider.trash == False
     ).one()
 
     service_provider.phone_number = phone_number
@@ -106,7 +106,7 @@ def initiate_verification(dbsession, spid, phone_number):
     dbsession.commit()
 
     tasks.verify_service_provider.apply_async(
-        service_provider.id,
+        (service_provider.id,),
         queue=config.SERVICE_PROVIDER_QUEUE
     )
 
