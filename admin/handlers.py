@@ -140,12 +140,15 @@ class ServiceProviderVerifyHandler(BaseHandler):
 
     @authenticated
     @handle_exceptions
-    def post(self, spid, token):
-        if not token:
-            initiate_verification(self.dbsession, spid)
-        else:
+    def post(self, spid):
+        phone_number = self.get_argument('phone_number')
+        otp = self.get_argument('otp')
+        if phone_number is not None:
+            initiate_verification(self.dbsession, spid, phone_number)
+        else if token is not None:
             verify_otp(self.dbsession, self.redisdb, spid, token)
-
+        else:
+            self.set_status(400)
 
 class ServiceProviderGCMHandler(BaseHandler):
     resource_name = 'serviceprovider'

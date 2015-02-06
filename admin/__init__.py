@@ -6,7 +6,7 @@ import config
 admin_application = Application(
     [
         (r'/api/serviceprovider/([\d]+)?/?', ServiceProviderHandler),
-        (r'/api/serviceprovider/([\d]+)/verify/([\d]+)/?', ServiceProviderVerifyHandler),
+        (r'/api/serviceprovider/([\d]+)/verify/?', ServiceProviderVerifyHandler),
         (r'/api/serviceprovider/([\d]+)/job/?', ServiceProviderJobHandler),
         (r'/api/serviceprovider/([\d]+)/gcm/?', ServiceProviderGCMHandler),
         (r'/api/service/?', ServiceHandler),

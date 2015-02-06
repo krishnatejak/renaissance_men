@@ -94,18 +94,21 @@ def delete_service_provider(dbsession, provider_id):
     )
     return True
 
-
-def initiate_verification(dbsession, spid):
+@transaction
+def initiate_verification(dbsession, spid, phone_number):
     service_provider = dbsession.query(ServiceProvider).filter(
         ServiceProvider.id == spid,
         Service.trash == False
     ).one()
 
+    service_provider.phone_number = phone_number
+    dbsession.add(service_provider)
+    dbsession.commit()
+
     tasks.verify_service_provider.apply_async(
         service_provider.id,
         queue=config.SERVICE_PROVIDER_QUEUE
     )
-
 
 def verify_otp(dbsession, redisdb, spid, token):
     service_provider = dbsession.query(ServiceProvider).filter(
@@ -123,7 +126,6 @@ def verify_otp(dbsession, redisdb, spid, token):
         redisdb.expire('otp:' + spid)
     else:
         raise AppException('OTP verification failed')
-
 
 def update_skills(dbsession, spid, sid, skills):
     current_skills = set([
