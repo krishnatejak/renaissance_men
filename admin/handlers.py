@@ -209,9 +209,7 @@ class ServiceHandler(BaseHandler):
 
 class JobHandler(BaseHandler):
     resource_name = 'job'
-    create_required = {'service_provider', 'service', 'location', 'request',
-                       'inspection', 'appointment_time', 'quote',
-                       'quoted_duration', 'materials_required', 'address'}
+    create_required = {'service_provider_id', 'service_id', 'location', 'request', 'appointment_time', 'address'}
 
     model_response_uris = {
         'href': '/{resource_name}/{id}/',
@@ -219,11 +217,8 @@ class JobHandler(BaseHandler):
         'end': '/{resource_name}/{id}/end/'
     }
 
-    #TODO job should not be created from here
     @handle_exceptions
-    def post(self, jid):
-        if jid:
-            raise AppException('Cannot create with Id')
+    def post(self):
         data = self.check_input('create')
         job = create_job(self.dbsession, data)
         self.send_model_response(job)

@@ -116,7 +116,6 @@ class User(db.Base):
     address = Column("address", String(2048))
     jobs = relationship("Job", backref=backref("user"))
 
-
 class Signupemail(db.Base):
     __tablename__ = 'signupemail'
 

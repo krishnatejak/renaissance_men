@@ -17,7 +17,7 @@ def create_user(dbsession, data):
     dbsession.commit()
 
     tasks.user_create.apply_async(
-        user.id,
+        (user.id,),
         queue=config.USER_QUEUE
     )
 

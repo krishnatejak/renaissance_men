@@ -10,12 +10,11 @@ import config
 
 __all__ = ['create_job', 'get_job', 'set_job_ended', 'set_job_started', 'set_job_accepted', 'set_job_rejected']
 
-
 @transaction
 def create_job(dbsession, data):
     job = Job()
-    data['service_id'] = data.pop('service')
-    data['service_provider_id'] = data.pop('service_provider')
+    data['service_id'] = data.pop('service_id')
+    data['service_provider_id'] = data.pop('service_provider_id')
     data['appointment_time'] = parse_json_datetime(data['appointment_time'])
 
     user_id = data.pop('user_id', 0)
@@ -23,10 +22,6 @@ def create_job(dbsession, data):
         user = get_user(dbsession, user_id)
     elif data.get('user'):
         user_data = data.pop('user')
-        user_data['address'] = data['address']
-        user_data['phone_number'] = data['phone_number']
-        user_data['location'] = data['location']
-        user_data['password'] = generate_secret()
         user = create_user(dbsession, user_data)
     else:
         raise AppException('User id or user data required to create job')
@@ -37,7 +32,7 @@ def create_job(dbsession, data):
     dbsession.commit()
 
     tasks.create_job.apply_async(
-        job.id,
+        (job.id,),
         queue=config.JOB_QUEUE
     )
 
