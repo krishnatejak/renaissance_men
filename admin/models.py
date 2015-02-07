@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, Float, ForeignKey, Table
 from sqlalchemy import DateTime, Enum
 from sqlalchemy.dialects.postgres import ARRAY, JSON
 from sqlalchemy.orm import relationship, backref, validates
@@ -26,6 +26,24 @@ class Service(db.Base):
         exclude = ['trash']
         fk = []
 
+class ServiceSkill(db.Base):
+    __tablename__ = 'service_skill'
+
+    id = Column(Integer, primary_key=True)
+    name = Column("name", String(256), nullable=False)
+    inspection = Column("inspection", Boolean, default=False)
+    service_id = Column("service_id", ForeignKey('service.id'))
+    trash = Column('trash', Boolean, default=False)
+
+    class Meta(object):
+        follow = []
+        follow_exclude = []
+        exclude = ['id', 'trash']
+        fk = []
+
+service_provider_skill = Table('service_provider_skill', db.Base.metadata, 
+        Column('service_provider_id', Integer, ForeignKey('service_provider.id')),
+        Column('service_skill_id', Integer, ForeignKey('service_skill.id')))
 
 class ServiceProvider(db.Base):
     __tablename__ = 'service_provider'
@@ -40,34 +58,18 @@ class ServiceProvider(db.Base):
     office_location = Column("office_location", ARRAY(Float, dimensions=1))
     cost = Column("cost", Float, default=0.0)
     experience = Column("experience", Float, default=0.0)
-    skills = relationship('ServiceSkill', backref=backref('service_provider'))
     jobs = relationship('Job', backref=backref('service_provider'))
     verified = Column("verified", Boolean, default=False)
     gcm_reg_id = Column("gcm_reg_id", String)
     service_range = Column("service_range", Integer, default=5)
     trash = Column("trash", Boolean, default=False)
 
+    skills = relationship("ServiceSkill", secondary=service_provider_skill)
+
     class Meta(object):
         follow = []
         follow_exclude = []
         exclude = ['trash']
-        fk = []
-
-
-class ServiceSkill(db.Base):
-    __tablename__ = 'service_skill'
-
-    id = Column(Integer, primary_key=True)
-    name = Column("name", String(256), nullable=False)
-    inspection = Column("inspection", Boolean, default=False)
-    service_provider_id = Column("service_provider_id", ForeignKey('service_provider.id'))
-    service_id = Column("service_id", ForeignKey('service.id'))
-    trash = Column('trash', Boolean, default=False)
-
-    class Meta(object):
-        follow = []
-        follow_exclude = []
-        exclude = ['id', 'trash']
         fk = []
 
 

@@ -177,6 +177,15 @@ class ServiceHandler(BaseHandler):
         services = get_services(self.dbsession)
         self.send_model_response(services)
 
+    @authenticated
+    @handle_exceptions
+    def put(self):
+        data = json.loads(self.request.body)
+        update_services(self.dbsession, data)
+
+        services = get_services(self.dbsession)
+        self.send_model_response(services)
+
     # TODO move this query to redis
     def send_model_response(self, instance_or_query):
         uri_kwargs = {

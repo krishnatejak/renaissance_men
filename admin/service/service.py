@@ -1,12 +1,12 @@
 from sqlalchemy import func
-from admin.models import Service
+from admin.models import Service, ServiceSkill
 from utils import transaction, update_model_from_dict
 from admin import tasks
 from exc import AppException
 import config
 
 __all__ = ['get_services', 'create_service', 'get_service_name',
-           'get_or_create_service']
+           'get_or_create_service', 'update_services']
 
 
 def get_services(dbsession):
@@ -22,7 +22,7 @@ def create_service(dbsession, data):
     dbsession.add(service)
     dbsession.commit()
     tasks.add_service.apply_async(
-        service.id,
+        (service.id,),
         queue=config.SERVICE_QUEUE
     )
     return service
@@ -35,7 +35,6 @@ def service_exists(dbsession, service_name):
     ).first()
 
     return service if service else False
-
 
 def get_or_create_service(dbsession, service_name):
     """returns service if exists otherwise creates and returns service"""
@@ -53,3 +52,23 @@ def get_service_name(dbsession, sid):
     ).one()
 
     return service[0]
+
+@transaction
+def update_services(dbsession, services):
+    for service_data in services:
+        service = get_or_create_service(dbsession, service_data['name'])
+
+        existing_skills = set([skill.name for skill in service.skills])
+        for skill_data in service_data['skills']:
+            if skill_data['name'] not in existing_skills:
+                service_skill = ServiceSkill()
+                service_skill.service_id = service.id
+                service_skill.name = skill_data['name']
+                service_skill.inspection = skill_data['inspection']
+                dbsession.add(service_skill)
+
+        tasks.add_service.apply_async(
+            (service.id,),
+            queue=config.SERVICE_QUEUE)
+
+    dbsession.commit()
