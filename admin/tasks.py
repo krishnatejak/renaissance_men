@@ -5,7 +5,7 @@ from background import celery
 from background import DBTask
 from admin.models import *
 import config
-from admin.service.sms import OtpSms
+from admin.service.sms import Sms
 
 @celery.task(name='admin.serviceprovider.add', base=DBTask, bind=True)
 def add_service_provider(self, spid):
@@ -93,7 +93,7 @@ def verify_service_provider(self, spid):
     hotp = pyotp.HOTP(config.OTP_SECRET)
     otp = hotp.at(count)
 
-    otp_sms = OtpSms(service_provider.phone_number, "OTP for registration with Sevame is " + str(otp))
+    otp_sms = Sms(service_provider.phone_number, "OTP for registration with Sevame is " + str(otp))
     otp_sms.send_sms()
 
 

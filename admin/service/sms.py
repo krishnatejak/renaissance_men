@@ -1,39 +1,22 @@
-import plivo
-
+from twilio.rest import TwilioRestClient
 import config
 
 
 class Sms(object):
-    def __init__(self, to_number):
-        self.auth_id = config.PLIVO_AUTH_ID
-        self.auth_token = config.PLIVO_AUTH_TOKEN
-        self.from_number = config.PLIVO_NUMBER
+    def __init__(self, to_number, body):
+        self.account_sid = config.TWILIO_ACCOUNT_SID
+        self.auth_token = config.TWILIO_AUTH_TOKEN
+        self.from_number = config.TWILIO_FROM_NUMBER
+        self.body = body
+
+        if len(to_number) == 10:
+            to_number = "+91" + to_number
+
         self.to_number = to_number
-        self.body = None
-
-    def generate_sms_body(self):
-
-        raise NotImplementedError
 
     def send_sms(self):
-        self.generate_sms_body()
-        try:
-            plivo_client = plivo.RestAPI(self.auth_id, self.auth_token)
+        client = TwilioRestClient(self.account_sid, self.auth_token)
 
-            message = {
-                'src': self.from_number,
-                'dst': self.to_number,
-                'text': self.body,
-            }
-            message_delivered = plivo_client.send_message(message)
-        except Exception as e:
-            raise e
+        response = client.messages.create(body=self.body, to=self.to_number, from_=self.from_number)
+        print(response)
 
-
-class OtpSms(Sms):
-    def __init__(self, to_number, body):
-        self.sms_body = body
-        super(OtpSms, self).__init__(to_number=to_number)
-
-    def generate_sms_body(self):
-        self.body = self.sms_body
