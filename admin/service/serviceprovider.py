@@ -124,8 +124,9 @@ def verify_otp(dbsession, redisdb, spid, token):
         raise AppException('OTP verification failed')
 
 def update_skills(dbsession, spid, sid, skills):
+    skill_names = [skill['name'] for skill in skills]
     skills = dbsession.query(ServiceSkill).filter(
-        ServiceSkill.name.in_(skills),
+        ServiceSkill.name.in_(skill_names),
         ServiceSkill.service_id == sid
     ).all()
 
