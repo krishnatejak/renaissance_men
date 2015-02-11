@@ -119,6 +119,7 @@ def verify_otp(dbsession, redisdb, spid, token):
     if otp.verify(token, count):
         service_provider.verified = True
         dbsession.add(service_provider)
+        dbsesion.commit()
         redisdb.delete('otp:' + str(spid))
     else:
         raise AppException('OTP verification failed')
