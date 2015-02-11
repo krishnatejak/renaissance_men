@@ -107,16 +107,16 @@ def job_started(self, jid):
     pass
 
 
-@celery.task(name='admin.job.complete')
+@celery.task(name='admin.job.complete', base=DBTask, bind=True)
 def job_complete(self, jid):
     pass
 
-@celery.task(name='admin.job.started', base=DBTask, bind=True)
+@celery.task(name='admin.job.rejected', base=DBTask, bind=True)
 def job_rejected(self, jid):
     pass
 
 
-@celery.task(name='admin.job.complete')
+@celery.task(name='admin.job.accepted', base=DBTask, bind=True)
 def job_accepted(self, jid):
     pass
 
