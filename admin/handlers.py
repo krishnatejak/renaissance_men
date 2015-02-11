@@ -23,6 +23,7 @@ import config
 
 __all__ = ['ServiceProviderHandler', 'ServiceHandler', 'JobHandler',
            'JobStartHandler', 'JobEndHandler', 'ServiceProviderVerifyHandler',
+           'JobAcceptHandler', 'JobRejectHandler',
            'ServiceProviderGCMHandler', 'PopulateHandler', 'SpGoogleAuthHandler', 
            'ServiceProviderJobHandler', 'UserGoogleAuthHandler', 'SignupEmail']
 
@@ -254,8 +255,9 @@ class JobAcceptHandler(BaseHandler):
     resource_name = 'job'
     model_response_uris = {}
 
+    @authenticated
     @handle_exceptions
-    def post(self, jid):
+    def put(self, jid):
         set_job_accepted(self.dbsession, jid)
         self.set_status(200)
         self.flush()
@@ -264,12 +266,12 @@ class JobRejectHandler(BaseHandler):
     resource_name = 'job'
     model_response_uris = {}
 
+    @authenticated
     @handle_exceptions
-    def post(self, jid):
+    def put(self, jid):
         set_job_rejected(self.dbsession, jid)
         self.set_status(200)
         self.flush()
-
 
 class PopulateHandler(RequestHandler):
     def post(self):

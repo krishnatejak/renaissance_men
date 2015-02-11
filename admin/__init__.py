@@ -14,6 +14,8 @@ admin_application = Application(
         (r'/api/job/([\d]+)?/?', JobHandler),
         (r'/api/job/([\d]+)/start/?', JobStartHandler),
         (r'/api/job/([\d]+)/end/?', JobEndHandler),
+        (r'/api/job/([\d]+)/accept/?', JobAcceptHandler),
+        (r'/api/job/([\d]+)/reject/?', JobRejectHandler),
         (r'/api/populate/all/?', PopulateHandler),
         (r'/api/serviceprovider/auth/google/?', SpGoogleAuthHandler),
         (r'/api/user/auth/google/?', UserGoogleAuthHandler),

@@ -96,10 +96,10 @@ class Job(db.Base):
     materials_required = Column("materials_required", Boolean, default=False)
 
     class Meta(object):
-        follow = ['service', 'service_provider']
-        exclude = ['id', 'trash']
+        follow = ['service', 'service_provider', 'user']
+        exclude = ['trash']
         follow_exclude = []
-        fk = ['service_id', 'service_provider_id']
+        fk = ['service_id', 'service_provider_id', 'user_id']
 
 
 class User(db.Base):

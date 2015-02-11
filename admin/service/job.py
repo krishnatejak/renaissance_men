@@ -55,7 +55,7 @@ def set_job_started(dbsession, jid):
     dbsession.commit()
 
     tasks.job_started.apply_async(
-        job.id,
+        (job.id,),
         queue=config.JOB_QUEUE
     )
 
@@ -71,36 +71,30 @@ def set_job_ended(dbsession, jid):
     dbsession.commit()
 
     tasks.job_complete.apply_async(
-        job.id,
+        (job.id,),
         queue=config.JOB_QUEUE
     )
 
 @transaction
 def set_job_accepted(dbsession, jid):
     job = dbsession.query(Job).filter(Job.id == jid).one()
-    if job.ended:
-        raise AppException('Cannot end ended job')
-    job.ended = datetime.utcnow()
     job.status = 'accepted'
     dbsession.add(job)
     dbsession.commit()
 
     tasks.job_complete.apply_async(
-        job.id,
+        (job.id,),
         queue=config.JOB_QUEUE
     )
 
 @transaction
 def set_job_rejected(dbsession, jid):
     job = dbsession.query(Job).filter(Job.id == jid).one()
-    if job.ended:
-        raise AppException('Cannot end ended job')
-    job.ended = datetime.utcnow()
     job.status = 'rejected'
     dbsession.add(job)
     dbsession.commit()
 
     tasks.job_complete.apply_async(
-        job.id,
+        (job.id,),
         queue=config.JOB_QUEUE
     )
