@@ -111,6 +111,15 @@ def job_started(self, jid):
 def job_complete(self, jid):
     pass
 
+@celery.task(name='admin.job.started', base=DBTask, bind=True)
+def job_rejected(self, jid):
+    pass
+
+
+@celery.task(name='admin.job.complete')
+def job_accepted(self, jid):
+    pass
+
 
 @celery.task(name='admin.user.create')
 def user_create(uid):

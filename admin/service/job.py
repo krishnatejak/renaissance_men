@@ -82,7 +82,7 @@ def set_job_accepted(dbsession, jid):
     dbsession.add(job)
     dbsession.commit()
 
-    tasks.job_complete.apply_async(
+    tasks.job_accepted.apply_async(
         (job.id,),
         queue=config.JOB_QUEUE
     )
@@ -94,7 +94,7 @@ def set_job_rejected(dbsession, jid):
     dbsession.add(job)
     dbsession.commit()
 
-    tasks.job_complete.apply_async(
+    tasks.job_rejected.apply_async(
         (job.id,),
         queue=config.JOB_QUEUE
     )
