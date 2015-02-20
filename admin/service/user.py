@@ -1,15 +1,21 @@
-from admin.models import User
+from admin.models import BaseUser, ServiceProvider, ServiceUser
 from utils import update_model_from_dict
 from utils import transaction
 from exc import AppException
 from admin import tasks
 import config
+import pyotp
 
-__all__ = ['create_user', 'get_user', 'authenticate_user']
+from sqlalchemy.orm.exc import NoResultFound
+
+__all__ = ['create_user', 'get_user', 'handle_user_authentication',
+           'verify_otp', 'update_user']
+
+BASE_USER_UPDATE_IGNORE = ('verified',)
 
 @transaction
 def create_user(dbsession, data):
-    user = User()
+    user = BaseUser()
     if user_exists(dbsession, data['email']):
         raise AppException('User already exists')
     update_model_from_dict(user, data)
@@ -23,23 +29,93 @@ def create_user(dbsession, data):
 
     return user
 
+@transaction
+def update_user(dbsession, uid, data):
+    user = dbsession.query(BaseUser).filter(
+        BaseUser.id == uid
+    ).one()
+    phone_number_changed = False
+    if 'phone_number' in data and data['phone_number'] != user.phone_number:
+        phone_number_changed = True
+
+    # remove all data that should be ignored
+    for field in BASE_USER_UPDATE_IGNORE:
+        data.pop(field, None)
+
+    update_model_from_dict(user, data)
+
+    # if phone number is changed initiated verification
+    if phone_number_changed and user.phone_number:
+        user.verified = False
+        tasks.verify_user_phone.apply_async(
+            (user.id,),
+            queue=config.USER_QUEUE
+        )
+    dbsession.add(user)
+    dbsession.commit()
+    return user
 
 def get_user(dbsession, user_id):
-    return dbsession.query(User).filter(User.id == user_id).one()
+    return dbsession.query(BaseUser).filter(BaseUser.id == user_id).one()
 
 
 def user_exists(dbsession, email):
-    user_count = dbsession.query(User.id).filter(User.email == email).count()
+    user_count = dbsession.query(BaseUser.id).filter(BaseUser.email == email).count()
     return user_count > 0
 
-def authenticate_user(dbsession, user_dict):
+
+def handle_user_authentication(dbsession, user_dict, user_type):
     try:
-        user = dbsession.query(User).filter(
-            User.email == user_dict['email'],
+        user = dbsession.query(BaseUser).filter(
+            BaseUser.email == user_dict['email'],
         ).one()
-    except:
+    except NoResultFound:
         user = create_user(dbsession, {
-            'name': user_dict['name'],
             'email': user_dict['email']
         })
-    return user
+
+    if user_type == 'service_provider':
+        try:
+            service_provider = dbsession.query(ServiceProvider).filter(
+                ServiceProvider.user_id == user.id
+            ).one()
+        except NoResultFound:
+            service_provider = ServiceProvider()
+            service_provider.user = user
+            dbsession.add(service_provider)
+            dbsession.commit()
+        return service_provider
+    elif user_type == 'service_user':
+        try:
+            service_user = dbsession.query(ServiceUser).filter(
+                ServiceUser.user_id == user.id
+            ).one()
+        except NoResultFound:
+            service_user = ServiceUser()
+            service_user.user = user
+            dbsession.add(service_user)
+            dbsession.commit()
+        return service_user
+    elif user_type == 'admin':
+        if not user.admin:
+            raise AppException('User is not admin')
+        return user
+
+
+def verify_otp(dbsession, redisdb, uid, token):
+    user = dbsession.query(BaseUser).filter(
+        ServiceProvider.id == uid
+    ).one()
+    count = redisdb.get('otp:' + uid)
+    if count:
+        count = int(count)
+    else:
+        raise AppException('No active verification in progress')
+    otp = pyotp.HOTP(config.OTP_SECRET)
+    if otp.verify(token, count):
+        user.verified = True
+        dbsession.add(user)
+        dbsession.commit()
+        redisdb.delete('otp:' + str(uid))
+    else:
+        raise AppException('OTP verification failed')

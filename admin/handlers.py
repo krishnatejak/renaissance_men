@@ -3,7 +3,6 @@ import json
 from tornado.web import RequestHandler, authenticated
 from tornado.auth import GoogleOAuth2Mixin
 from tornado.gen import coroutine
-from tornado import escape
 
 from session import SessionMixin
 
@@ -15,24 +14,27 @@ from admin.service.job import *
 from admin.service.service import *
 from admin.service.user import *
 from admin.service.signup import *
+from admin.service.order import *
 from admin.tasks import admin_add_all
 from utils import model_to_dict, TornadoJSONEncoder
 from exc import AppException, handle_exceptions
+
 import config
 
 
 __all__ = ['ServiceProviderHandler', 'ServiceHandler', 'JobHandler',
            'JobStartHandler', 'JobEndHandler', 'ServiceProviderVerifyHandler',
-           'JobAcceptHandler', 'JobRejectHandler',
-           'ServiceProviderGCMHandler', 'PopulateHandler', 'SpGoogleAuthHandler', 
-           'ServiceProviderJobHandler', 'UserGoogleAuthHandler', 'SignupEmail']
+           'JobAcceptHandler', 'JobRejectHandler', 'PopulateHandler',
+           'GoogleAuthHandler', 'ServiceProviderJobHandler',
+           'SignupEmail', 'OrderHandler',  'OrderStatusHandler','UserHandler',
+           'UserVerifyHandler']
 
 
 class BaseHandler(RequestHandler, SessionMixin):
     resource_name = None
     create_required = {}
     update_ignored = {}
-    model_response_uris = {'href': '/{resource_name}/{id}/'}
+    model_response_uris = {'href': '/api/{resource_name}/{id}/'}
 
     def initialize(self):
         self.dbsession = db.Session()
@@ -152,21 +154,6 @@ class ServiceProviderVerifyHandler(BaseHandler):
         else:
             self.set_status(400)
 
-class ServiceProviderGCMHandler(BaseHandler):
-    resource_name = 'serviceprovider'
-    create_required = {'gcm_reg_id'}
-
-    def get_login_url(self):
-        return '/api/serviceprovider/auth/google/'
-
-    @authenticated
-    @handle_exceptions
-    def post(self, spid):
-        data = self.check_input('create')
-        update_gcm_reg_id(self.dbsession, spid, data['gcm_reg_id'])
-        self.set_status(200)
-        self.finish()
-
 
 class ServiceHandler(BaseHandler):
     resource_name = 'service'
@@ -282,39 +269,41 @@ class PopulateHandler(RequestHandler):
 class ServiceProviderJobHandler(BaseHandler):
     @handle_exceptions
     def get(self, spid):
-        status =  self.get_argument("status", "").split(",")
+        status = self.get_argument("status", "").split(",")
         jobs = fetch_jobs_by_status(self.dbsession, spid, status)
         self.send_model_response(jobs)
 
+
 class GoogleAuthHandler(BaseHandler, GoogleOAuth2Mixin):
-
-    _OAUTH_PROFILE_URL = 'https://www.googleapis.com/oauth2/v2/userinfo'
-    REDIRECT_URL = None
-    USER_TYPE = None
-
-    def handle_authenticated_user(self, access_token, token_type):
-        self.session['user_type'] = self.USER_TYPE
-        http = self.get_auth_http_client()
-        http.fetch(
-            self._OAUTH_PROFILE_URL,
-            method='GET',
-            headers={'Authorization': '%s %s' % (token_type, access_token)},
-            callback=self.user_details_callback
-        )
-
-    def user_details_callback(self, response):
-        raise NotImplementedError
+    resource_name = 'user'
+    REDIRECT_URL = config.GOOGLE_OAUTH_REDIRECT
 
     @coroutine
     def get(self):
+        user_type = self.get_argument('user_type', None)
+        if user_type:
+            self.set_secure_cookie('user_type', user_type)
         if self.get_argument('code', False):
             user = yield self.get_authenticated_user(
                 redirect_uri=self.REDIRECT_URL,
                 code=self.get_argument('code'))
-
-            self.handle_authenticated_user(
-                user['access_token'], user['token_type']
-            )
+            try:
+                details = client.verify_id_token(
+                    user['id_token'],
+                    config.GOOGLE_OAUTH2_CLIENT_ID
+                )
+                user_type = self.get_secure_cookie('user_type')
+                user = handle_user_authentication(
+                    self.dbsession, details, user_type
+                )
+                self.session['user_id'] = user.id
+                self.session['user_type'] = self.get_secure_cookie('user_type')
+                self.send_model_response(user)
+            except crypt.AppIdentityError:
+                self.set_status(403)
+            except AppException:
+                self.set_status(400)
+                self.write('User is not admin')
         else:
             yield self.authorize_redirect(
                 redirect_uri=self.REDIRECT_URL,
@@ -323,30 +312,27 @@ class GoogleAuthHandler(BaseHandler, GoogleOAuth2Mixin):
                 response_type='code',
                 extra_params={'approval_prompt': 'auto'})
 
-
-class SpGoogleAuthHandler(BaseHandler):
+    @handle_exceptions
     def post(self):
         data = json.loads(self.request.body)
-        if data.has_key('access_token'):
+        user_type = self.get_argument('user_type')
+        if 'access_token' in data:
             try:
-                details = client.verify_id_token(data['access_token'], config.GOOGLE_OAUTH2_CLIENT_ID)
-                service_provider = authenticate_service_provider(self.dbsession, details)
-                self.session['user_id'] = service_provider.id
-                self.session['user_type'] = 'SERVICE_PROVIDER'
-                self.send_model_response(service_provider)
+                details = client.verify_id_token(
+                    data['access_token'],
+                    config.GOOGLE_OAUTH2_CLIENT_ID
+                )
+                user = handle_user_authentication(
+                    self.dbsession, details, user_type
+                )
+                self.session['user_type'] = user_type
+                self.session['user_id'] = user.id
+                self.send_model_response(user)
             except crypt.AppIdentityError:
                 self.set_status(403)
         else:
             self.set_status(400)
 
-class UserGoogleAuthHandler(GoogleAuthHandler):
-    REDIRECT_URL = config.GOOGLE_OAUTH_USER_REDIRECT
-    USER_TYPE = 'user'
-
-    def user_details_callback(self, response):
-        response = escape.json_decode(response.body)
-        user = authenticate_user(self.dbsession, response)
-        self.session['user_id'] = user.id
 
 class SignupEmail(BaseHandler):
     resource_name = 'signup'
@@ -364,3 +350,78 @@ class SignupEmail(BaseHandler):
         self.set_header("Content-Type", "application/json")
         self.write(json.dumps(email_dict))
         self.finish()
+
+
+class OrderHandler(BaseHandler):
+    resource_name = 'order'
+    create_required = {'service', 'request', 'scheduled',}
+    update_ignored = {'id', 'status', 'completed', 'created'}
+
+    @authenticated
+    def post(self, oid):
+        if oid:
+            raise AppException('Invalid request')
+        if self.session['user_type'] != 'service_user':
+            raise AppException('Only service users can create orders')
+        data = self.check_input('create')
+        order = create_order(self.dbsession, data, self.session['user_id'])
+        self.send_model_response(order)
+
+    @authenticated
+    def get(self, oid):
+        orders = get_order(
+            self.dbsession,
+            oid=oid,
+            user_type=self.session['user_type'],
+            user_id=self.session['user_id']
+        )
+        self.send_model_response(orders)
+
+    @authenticated
+    def put(self, oid):
+        data = self.check_input('update')
+        order = update_order(self.dbsession, oid, data)
+        self.send_model_response(order)
+
+
+class OrderStatusHandler(BaseHandler):
+    resource_name = 'order'
+
+    @authenticated
+    def get(self, status):
+        orders = get_status_orders(
+            self.dbsession,
+            status,
+            self.session['user_type'],
+            self.session['user_id']
+        )
+        self.send_model_response(orders)
+
+
+class UserHandler(BaseHandler):
+    resource_name = 'user'
+    update_ignored = {'verified', 'id', 'admin', 'email'}
+
+    @authenticated
+    def get(self, uid):
+        user = get_user(self.dbsession, uid)
+        self.send_model_response(user)
+
+    @authenticated
+    def put(self, uid):
+        data = self.check_input('update')
+        user = update_user(self.dbsession, uid, data)
+        self.send_model_response(user)
+
+
+class UserVerifyHandler(BaseHandler):
+
+    @authenticated
+    @handle_exceptions
+    def post(self, uid):
+        otp = self.get_argument('otp', None)
+
+        if otp is not None:
+            verify_otp(self.dbsession, self.redisdb, uid, otp)
+        else:
+            raise AppException('otp required to verify user')

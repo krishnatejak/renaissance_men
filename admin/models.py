@@ -1,14 +1,12 @@
-from sqlalchemy import Column, Integer, String, Boolean, Float, ForeignKey, Table
+from sqlalchemy import Column, Integer, String, Boolean, Float, ForeignKey
 from sqlalchemy import DateTime, Enum
-from sqlalchemy.dialects.postgres import ARRAY, JSON
-from sqlalchemy.orm import relationship, backref, validates
-from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
-from cryptacular.bcrypt import BCRYPTPasswordManager
-
+from sqlalchemy.dialects.postgres import ARRAY
+from sqlalchemy.orm import relationship, backref
+from datetime import datetime
 import db
 
-
-__all__ = ['Service', 'ServiceProvider', 'Job', 'ServiceSkill', 'User']
+__all__ = ['Service', 'ServiceProvider', 'Job', 'ServiceSkill', 'BaseUser',
+           'ServiceUser']
 
 
 class Service(db.Base):
@@ -26,6 +24,7 @@ class Service(db.Base):
         exclude = ['trash']
         fk = []
 
+
 class ServiceSkill(db.Base):
     __tablename__ = 'service_skill'
 
@@ -41,35 +40,72 @@ class ServiceSkill(db.Base):
         exclude = ['id', 'trash']
         fk = []
 
-service_provider_skill = Table('service_provider_skill', db.Base.metadata, 
-        Column('service_provider_id', Integer, ForeignKey('service_provider.id')),
-        Column('service_skill_id', Integer, ForeignKey('service_skill.id')))
+
+class ServiceProviderSkill(db.Base):
+    __tablename__ = 'service_provider_skill'
+
+    id = Column(Integer, primary_key=True)
+    service_provider_id = Column('service_provider_id', Integer, ForeignKey('service_provider.id'))
+    service_skill_id = Column('service_skill_id', Integer, ForeignKey('service_skill.id'))
+
 
 class ServiceProvider(db.Base):
     __tablename__ = 'service_provider'
 
     id = Column(Integer, primary_key=True)
-    name = Column("name", String(512), nullable=False)
-    email = Column("email", String(256), nullable=False)
+    user_id = Column("user_id", ForeignKey('base_user.id'))
     availability = Column("availability", Boolean, default=False)
-    phone_number = Column("phone_number", String(20))
-    address = Column("address", String(2048))
     home_location = Column("home_location", ARRAY(Float, dimensions=1))
     office_location = Column("office_location", ARRAY(Float, dimensions=1))
     cost = Column("cost", Float, default=0.0)
     experience = Column("experience", Float, default=0.0)
     jobs = relationship('Job', backref=backref('service_provider'))
-    verified = Column("verified", Boolean, default=False)
-    gcm_reg_id = Column("gcm_reg_id", String)
+    orders = relationship('Order', backref=backref('service_provider'))
     service_range = Column("service_range", Integer, default=5)
     trash = Column("trash", Boolean, default=False)
 
-    skills = relationship("ServiceSkill", secondary=service_provider_skill)
+    skills = relationship("ServiceSkill", secondary='service_provider_skill')
+
+    class Meta(object):
+        follow = ['user']
+        follow_exclude = []
+        exclude = ['trash']
+        fk = []
+
+
+class ServiceUser(db.Base):
+    __tablename__ = 'service_user'
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column("user_id", ForeignKey('base_user.id'))
+    location = Column("location", ARRAY(Float, dimensions=1))
+    jobs = relationship('Job', backref=backref('service_user'))
+    orders = relationship('Order', backref=backref('service_user'))
+
+    class Meta(object):
+        follow = ['user']
+        follow_exclude = []
+        exclude = []
+        fk = []
+
+class BaseUser(db.Base):
+    __tablename__ = 'base_user'
+
+    id = Column(Integer, primary_key=True)
+    admin = Column("admin", Boolean, default=False)
+    name = Column("name", String(1024))
+    email = Column("email", String(256), nullable=False, index=True)
+    phone_number = Column("phone", String(20))
+    address = Column("address", String(2048))
+    verified = Column("verified", Boolean, default=False)
+    gcm_reg_id = Column("gcm_reg_id", String)
+    service_provider = relationship("ServiceProvider", backref="user")
+    service_user = relationship("ServiceUser", backref="user")
 
     class Meta(object):
         follow = []
         follow_exclude = []
-        exclude = ['trash']
+        exclude = []
         fk = []
 
 
@@ -82,7 +118,7 @@ class Job(db.Base):
     status = Column("status", Enum(*status_enums, name='status_types'), default='assigned')
     service_provider_id = Column("service_provider_id", ForeignKey('service_provider.id'))
     service_id = Column("service_id", ForeignKey("service.id"))
-    user_id = Column("user_id", ForeignKey("user.id"))
+    service_user_id = Column("service_user_id", ForeignKey("service_user.id"))
     location = Column("location", ARRAY(Float, dimensions=1))
     request = Column("request", String(2048))
     address = Column("address", String(2048))
@@ -102,20 +138,6 @@ class Job(db.Base):
         fk = ['service_id', 'service_provider_id', 'user_id']
 
 
-class User(db.Base):
-    __tablename__ = 'user'
-
-    user_types = ('admin', 'user', 'service_provider')
-
-    id = Column(Integer, primary_key=True)
-    user_type = Column("user_type", Enum(*user_types, name='user_types'), default='user')
-    name = Column("name", String(1024), nullable=False)
-    email = Column("email", String(256), nullable=False)
-    phone_number = Column("phone", String(20))
-    location = Column("location", ARRAY(Float, dimensions=1))
-    address = Column("address", String(2048))
-    jobs = relationship("Job", backref=backref("user"))
-
 class Signupemail(db.Base):
     __tablename__ = 'signupemail'
 
@@ -128,4 +150,29 @@ class Signupemail(db.Base):
         follow = []
         follow_exclude = []
         exclude = ['id', 'trash']
+        fk = []
+
+
+class Order(db.Base):
+    __tablename__ = 'order'
+
+    status_types = ('created', 'processing', 'assigned', 'completed')
+
+    id = Column(Integer, primary_key=True)
+    service = Column("service", String(256))
+    location = Column("location", ARRAY(Float, dimensions=1))
+    status = Column("status", Enum(*status_types, name='order_status_types'), default='created')
+    request = Column("request", String(2048))
+    scheduled = Column("scheduled", DateTime(timezone=True))
+    created = Column("created", DateTime(timezone=True), default=datetime.utcnow())
+    completed = Column("completed", DateTime(timezone=True))
+    address = Column("address", String(2048))
+    service_user_id = Column("service_user_id", ForeignKey("service_user.id"))
+    service_provider_id = Column("service_provider_id", ForeignKey("service_provider.id"))
+    job_id = Column("job_id", ForeignKey("job.id"))
+
+    class Meta(object):
+        follow = []
+        follow_exclude = []
+        exclude = []
         fk = []

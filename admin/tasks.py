@@ -82,18 +82,21 @@ def delete_service_provider(self, spid):
     sp_dict = self.r.hgetall("sp:{0}".format(spid))
     self.r.hdel("sp:{0}".format(spid), *sp_dict)
 
-@celery.task(name='admin.serviceprovider.verify', base=DBTask, bind=True)
-def verify_service_provider(self, spid):
-    service_provider = self.db.query(ServiceProvider).filter(
-        ServiceProvider.id == spid
+@celery.task(name='admin.user.phone.verify', base=DBTask, bind=True)
+def verify_user_phone(self, uid):
+    user = self.db.query(BaseUser).filter(
+        BaseUser.id == uid
     ).one()
 
     count = self.r.incr('otp:count')
-    self.r.set('otp:' + str(spid), count)
+    self.r.set('otp:' + str(uid), count)
     hotp = pyotp.HOTP(config.OTP_SECRET)
     otp = hotp.at(count)
 
-    otp_sms = Sms(service_provider.phone_number, "OTP for registration with Sevame is " + str(otp))
+    otp_sms = Sms(
+        user.phone_number,
+        "OTP for registration with Sevame is " + str(otp)
+    )
     otp_sms.send_sms()
 
 
