@@ -69,7 +69,7 @@ class ServiceProvider(db.Base):
     class Meta(object):
         follow = ['user']
         follow_exclude = []
-        exclude = ['trash']
+        exclude = ['trash', 'user_id']
         fk = []
 
 
@@ -84,7 +84,7 @@ class ServiceUser(db.Base):
 
     class Meta(object):
         follow = ['user']
-        follow_exclude = []
+        follow_exclude = ['user_id']
         exclude = []
         fk = []
 
