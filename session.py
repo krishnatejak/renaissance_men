@@ -9,6 +9,7 @@ class Session(object):
     def __init__(self, sessionid=None):
         self.r = db.session_redis
         self._sessionid = None
+        self._psessionid = None
         self.sessionid = sessionid
 
 
@@ -16,12 +17,17 @@ class Session(object):
     def sessionid(self):
         return self._sessionid
 
+    @property
+    def psessionid(self):
+        return self._psessionid
+
     @sessionid.setter
     def sessionid(self, session_id):
         if not session_id:
-            self._sessionid = self.prefixed(self.generate_sid())
+            self._sessionid = self.generate_sid()
         else:
             self._sessionid = session_id
+        self._psessionid = self.prefixed(self._sessionid)
         self.__set_last_accessed()
 
     @staticmethod
@@ -36,10 +42,10 @@ class Session(object):
         exists = False
         if self.r.exists(self.sessionid):
             exists = True
-        self.r.hset(self.sessionid, 'last_accessed', get_json_datetime())
+        self.r.hset(self.psessionid, 'last_accessed', get_json_datetime())
         if not exists:
             self.r.expire(
-                self.sessionid,
+                self.psessionid,
                 config.SESSION_EXPIRY * 24 * 60 * 60
             )
 
@@ -73,10 +79,17 @@ class SessionMixin(object):
     def session(self):
         """session id should be sent as request header"""
         if not hasattr(self, '_session'):
-            sessionid = self.request.headers.get(config.SESSION_HEADER)
-            session = Session(sessionid)
-            if not sessionid:
+            header = self.request.headers.get(config.SESSION_HEADER)
+            cookie = self.get_secure_cookie('session', None)
+            if header:
+                session = Session(header)
+            elif cookie:
+                session = Session(cookie)
+            else:
+                session = Session()
+            if not (header or cookie):
                 self.set_header(config.SESSION_HEADER, session.sessionid)
+                self.set_secure_cookie('session', session.sessionid)
             self._session = session
 
         return self._session
