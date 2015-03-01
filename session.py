@@ -87,9 +87,10 @@ class SessionMixin(object):
                 session = Session(cookie)
             else:
                 session = Session()
-            if not (header or cookie):
-                self.set_header(config.SESSION_HEADER, session.sessionid)
-                self.set_secure_cookie('session', session.sessionid)
+
+            self.set_header(config.SESSION_HEADER, session.sessionid)
+            self.set_secure_cookie('session', session.sessionid)
+
             self._session = session
 
         return self._session
