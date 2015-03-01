@@ -37,8 +37,8 @@ TWILIO_AUTH_TOKEN = '0c91e2dc901fba5d1a1cf1b1de02c107'
 TWILIO_FROM_NUMBER = '+19375021395'
 
 # Google OAuth credentials
-GOOGLE_OAUTH2_CLIENT_SECRET = '_IrSZMA2a6uweNyUdXZA-KEz '
-GOOGLE_OAUTH2_CLIENT_ID = '1003714066979-0jut8h3vr7kf3t44bia55k45nbpmv1pg.apps.googleusercontent.com'
+GOOGLE_OAUTH2_CLIENT_SECRET = 'OzxkOyyOssjIdLsWcnY4Fpmy'
+GOOGLE_OAUTH2_CLIENT_ID = '388912374776-ag2qu3vvvumlim94tpkqs3e6jn4munmg.apps.googleusercontent.com'
 
 # Auth redirect urls
 GOOGLE_OAUTH_REDIRECT = 'http://localhost:8888/api/auth/google/'
