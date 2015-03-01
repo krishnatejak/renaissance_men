@@ -23,7 +23,7 @@ admin_application = Application(
         (r'/api/order/([\d]+)/serviceprovider/', OrderHandler),
         (r'/api/order/([\w]+)/', OrderStatusHandler),
         (r'/api/user/([\d]+)/verify/', UserVerifyHandler),
-        (r'/api/user/([\d]+)/', UserHandler),
+        (r'/api/user/([\d]+)?/?', UserHandler),
         (r'/api/signup/?', SignupEmail)
     ],
     google_oauth={
