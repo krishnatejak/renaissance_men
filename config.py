@@ -41,8 +41,7 @@ GOOGLE_OAUTH2_CLIENT_SECRET = '_IrSZMA2a6uweNyUdXZA-KEz '
 GOOGLE_OAUTH2_CLIENT_ID = '1003714066979-0jut8h3vr7kf3t44bia55k45nbpmv1pg.apps.googleusercontent.com'
 
 # Auth redirect urls
-GOOGLE_OAUTH_SP_REDIRECT = 'https://accurox.com/api/serviceprovider/auth/google/'
-GOOGLE_OAUTH_USER_REDIRECT = 'https://accurox.com/api/user/auth/google/'
+GOOGLE_OAUTH_REDIRECT = 'http://localhost:8888/api/auth/google/'
 
 #Google API Key
 GOOGLE_GCM_API_KEY = 'AIzaSyBs0_M1TNHMMkIVv6k4-kcGJsrRYsUHm5Y'
