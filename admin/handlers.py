@@ -89,8 +89,6 @@ class ServiceProviderHandler(BaseHandler):
     @authenticated
     @handle_exceptions
     def put(self, spid):
-        if spid != self.session['user_id']:
-            raise AppException('Action not Allowed')
         data = self.check_input('update')
         service_provider = update_service_provider(self.dbsession, spid,
                                                    data)
@@ -99,16 +97,12 @@ class ServiceProviderHandler(BaseHandler):
     @authenticated
     @handle_exceptions
     def get(self, spid):
-        if spid != self.session['user_id']:
-            raise AppException('Action not Allowed')
         service_provider = get_service_provider(self.dbsession, spid)
         self.send_model_response(service_provider)
 
     @authenticated
     @handle_exceptions
     def delete(self, spid):
-        if spid != self.session['user_id']:
-            raise AppException('Action not Allowed')
         is_deleted = get_service_provider(self.dbsession, spid)
         self.set_status(204)
         self.write('')
