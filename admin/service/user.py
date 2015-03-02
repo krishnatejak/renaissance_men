@@ -119,3 +119,13 @@ def verify_otp(dbsession, redisdb, uid, token):
         redisdb.delete('otp:' + str(uid))
     else:
         raise AppException('OTP verification failed')
+
+
+def make_admin(dbsession, email):
+    user = dbsession.query(BaseUser).filter(
+        BaseUser.email == email
+    ).one()
+
+    user.admin = True
+    dbsession.add(user)
+    dbsession.commit()
