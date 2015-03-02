@@ -1,5 +1,6 @@
 import pyotp
 import gcmclient
+import datetime
 
 from background import celery
 from background import DBTask
@@ -178,3 +179,20 @@ def admin_notify_gcm(msg, *gcm_reg_ids):
     gcm = gcmclient.GCM(config.GOOGLE_GCM_API_KEY)
     multicast_msg = gcmclient.JSONMessage(gcm_reg_ids, msg)
     gcm.send(multicast_msg)
+
+@celery.task(name='admin.scheduler.laundry', base=DBTask, bind=True)
+def admin_scheduler_laundry(self):
+    utc = datetime.datetime.utcnow()
+    date = utc.strftime('%Y/%m/%d')
+
+    if not self.r.hgetall('scheduler:laundry:{0}'.format(date)):
+        self.r.hmset('scheduler:laundry:{0}'.format(date))
+        service_providers = self.db.query(ServiceProvider).filter(
+                                                Service.name == "laundry",
+                                                ServiceProviderService.service_id == Service.id,
+                                                ServiceProvider.id == ServiceProviderService.service_provider_id,
+                                                ServiceProvider.availability == True
+                                            ).all()
+        for service_provider in service_providers:
+            #Code to populate service provider time slots
+            pass
