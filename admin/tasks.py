@@ -1,5 +1,6 @@
 import pyotp
 import gcmclient
+import datetime
 
 from background import celery
 from background import DBTask
@@ -32,14 +33,12 @@ def add_service_provider(self, spid):
 
 @celery.task(name='admin.serviceprovider.update', base=DBTask, bind=True)
 def update_service_provider(self, spid):
-    service_provider = self.db.query(ServiceProvider).filter(
-        ServiceProvider.trash == False, ServiceProvider.id == spid
+    service_provider, base_user = self.db.query(ServiceProvider, BaseUser).filter(
+        ServiceProvider.trash == False, ServiceProvider.id == spid, ServiceProvider.user_id == BaseUser.id
     ).first()
 
     service_dict = {}
-
     skills = service_provider.skills
-
     for skill in skills:
         service_name = skill.service.name
         self.r.sadd("{0}:providers".format(service_name), spid)
@@ -58,9 +57,9 @@ def update_service_provider(self, spid):
             self.r.srem("sp:{0}:{1}:skills".format(spid, key),*deleted_skills)
 
     sp_dict = {
-        "name":service_provider.name,
+        "name":base_user.name,
         "availability":service_provider.availability,
-        "phone_number":service_provider.phone_number,
+        "phone_number":base_user.phone_number,
         "home_location":service_provider.home_location,
         "office_location":service_provider.office_location,
         "service_range":service_provider.service_range
@@ -178,3 +177,20 @@ def admin_notify_gcm(msg, *gcm_reg_ids):
     gcm = gcmclient.GCM(config.GOOGLE_GCM_API_KEY)
     multicast_msg = gcmclient.JSONMessage(gcm_reg_ids, msg)
     gcm.send(multicast_msg)
+
+@celery.task(name='admin.scheduler.laundry', base=DBTask, bind=True)
+def admin_scheduler_laundry(self):
+    utc = datetime.datetime.utcnow()
+    date = utc.strftime('%Y/%m/%d')
+
+    if not self.r.hgetall('scheduler:laundry:{0}'.format(date)):
+        self.r.hmset('scheduler:laundry:{0}'.format(date))
+        service_providers = self.db.query(ServiceProvider).filter(
+                                                Service.name == "laundry",
+                                                ServiceProviderService.service_id == Service.id,
+                                                ServiceProvider.id == ServiceProviderService.service_provider_id,
+                                                ServiceProvider.availability == True
+                                            ).all()
+        for service_provider in service_providers:
+            #Code to populate service provider time slots
+            pass

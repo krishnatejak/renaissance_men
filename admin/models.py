@@ -6,23 +6,23 @@ from datetime import datetime
 import db
 
 __all__ = ['Service', 'ServiceProvider', 'Job', 'ServiceSkill', 'BaseUser',
-           'ServiceUser']
+           'ServiceUser', 'ServiceProviderService', 'Event']
 
 
 class Service(db.Base):
-    __tablename__ = 'service'
+        __tablename__ = 'service'
 
-    id = Column(Integer, primary_key=True)
-    name = Column("name", String(256), nullable=False)
-    jobs = relationship('Job', backref=backref('service'))
-    skills = relationship('ServiceSkill', backref=backref('service'))
-    trash = Column("trash", Boolean, default=False)
+        id = Column(Integer, primary_key=True)
+        name = Column("name", String(256), nullable=False)
+        jobs = relationship('Job', backref=backref('service'))
+        skills = relationship('ServiceSkill', backref=backref('service'))
+        trash = Column("trash", Boolean, default=False)
 
-    class Meta(object):
-        follow = ['skills']
-        follow_exclude = ['service_provider_id', 'trash', 'service_id', 'id', 'inspection']
-        exclude = ['trash']
-        fk = []
+        class Meta(object):
+            follow = ['skills']
+            follow_exclude = ['service_provider_id', 'trash', 'service_id', 'id', 'inspection']
+            exclude = ['trash']
+            fk = []
 
 
 class ServiceSkill(db.Base):
@@ -47,7 +47,13 @@ class ServiceProviderSkill(db.Base):
     id = Column(Integer, primary_key=True)
     service_provider_id = Column('service_provider_id', Integer, ForeignKey('service_provider.id'))
     service_skill_id = Column('service_skill_id', Integer, ForeignKey('service_skill.id'))
+    trash = Column('trash', Boolean, default=False)
 
+    class Meta(object):
+        follow = []
+        follow_exclude = []
+        exclude = ['id', 'trash']
+        fk = []
 
 class ServiceProvider(db.Base):
     __tablename__ = 'service_provider'
@@ -72,6 +78,13 @@ class ServiceProvider(db.Base):
         exclude = ['trash', 'user_id']
         fk = []
 
+class ServiceProviderService(db.Base):
+    __tablename__ = 'service_provider_service'
+
+    id = Column(Integer, primary_key= True)
+    service_id = Column("service_id", ForeignKey('service.id'))
+    service_provider_id = Column('service_provider_id', Integer, ForeignKey('service_provider.id'))
+    trash = Column('trash', Boolean, default=False)
 
 class ServiceUser(db.Base):
     __tablename__ = 'service_user'
@@ -170,6 +183,21 @@ class Order(db.Base):
     service_user_id = Column("service_user_id", ForeignKey("service_user.id"))
     service_provider_id = Column("service_provider_id", ForeignKey("service_provider.id"))
     job_id = Column("job_id", ForeignKey("job.id"))
+
+    class Meta(object):
+        follow = []
+        follow_exclude = []
+        exclude = []
+        fk = []
+
+class Event(db.Base):
+    __tablename__ = 'event'
+
+    id = Column(Integer, primary_key=True)
+    start_time = Column("start_time", DateTime(timezone=True))
+    end_time = Column("end_time", DateTime(timezone=True))
+    order_id = Column("order_id", ForeignKey("order.id"))
+    trash = Column("trash", Boolean, default=False)
 
     class Meta(object):
         follow = []
