@@ -33,14 +33,12 @@ def add_service_provider(self, spid):
 
 @celery.task(name='admin.serviceprovider.update', base=DBTask, bind=True)
 def update_service_provider(self, spid):
-    service_provider = self.db.query(ServiceProvider).filter(
-        ServiceProvider.trash == False, ServiceProvider.id == spid
+    service_provider, base_user = self.db.query(ServiceProvider, BaseUser).filter(
+        ServiceProvider.trash == False, ServiceProvider.id == spid, ServiceProvider.user_id == BaseUser.id
     ).first()
 
     service_dict = {}
-
     skills = service_provider.skills
-
     for skill in skills:
         service_name = skill.service.name
         self.r.sadd("{0}:providers".format(service_name), spid)
@@ -59,9 +57,9 @@ def update_service_provider(self, spid):
             self.r.srem("sp:{0}:{1}:skills".format(spid, key),*deleted_skills)
 
     sp_dict = {
-        "name":service_provider.name,
+        "name":base_user.name,
         "availability":service_provider.availability,
-        "phone_number":service_provider.phone_number,
+        "phone_number":base_user.phone_number,
         "home_location":service_provider.home_location,
         "office_location":service_provider.office_location,
         "service_range":service_provider.service_range

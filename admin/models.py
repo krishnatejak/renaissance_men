@@ -47,7 +47,13 @@ class ServiceProviderSkill(db.Base):
     id = Column(Integer, primary_key=True)
     service_provider_id = Column('service_provider_id', Integer, ForeignKey('service_provider.id'))
     service_skill_id = Column('service_skill_id', Integer, ForeignKey('service_skill.id'))
+    trash = Column('trash', Boolean, default=False)
 
+    class Meta(object):
+        follow = []
+        follow_exclude = []
+        exclude = ['id', 'trash']
+        fk = []
 
 class ServiceProvider(db.Base):
     __tablename__ = 'service_provider'
