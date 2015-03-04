@@ -36,18 +36,25 @@ def update_service_provider(self, spid):
     service_provider, base_user = self.db.query(ServiceProvider, BaseUser).filter(
         ServiceProvider.trash == False, ServiceProvider.id == spid, ServiceProvider.user_id == BaseUser.id
     ).first()
+    sp_skills = self.db.query(ServiceProviderSkill).filter(
+                                    ServiceProviderSkill.service_provider_id == spid,
+                                    ServiceProviderSkill.trash == False
+                                ).all()
+
+    sp_skill_ids = [sp_skill.service_skill_id for sp_skill in sp_skills]
 
     service_dict = {}
     skills = service_provider.skills
     for skill in skills:
         service_name = skill.service.name
         self.r.sadd("{0}:providers".format(service_name), spid)
-        self.r.sadd("sp:{0}:{1}:skills".format(spid, service_name), skill.name)
+        if skill.id in sp_skill_ids:
+            self.r.sadd("sp:{0}:{1}:skills".format(spid, service_name), skill.name)
 
-        if service_dict.get(service_name):
-            service_dict[service_name].append(skill.name)
-        else:
-            service_dict[service_name] = [skill.name]
+            if service_dict.get(service_name):
+                service_dict[service_name].append(skill.name)
+            else:
+                service_dict[service_name] = [skill.name]
 
     for key in service_dict:
         redis_skills = self.r.smembers("sp:{0}:{1}:skills".format(spid, key))
@@ -153,12 +160,20 @@ def admin_add_all(self):
     service_providers = self.db.query(ServiceProvider).filter(ServiceProvider.trash == False).all()
 
     for service_provider in service_providers:
+        sp_skills = self.db.query(ServiceProviderSkill).filter(
+                                    ServiceProviderSkill.service_provider_id == service_provider.id,
+                                    ServiceProviderSkill.trash == False
+                                ).all()
+
+        sp_skill_ids = [sp_skill.service_skill_id for sp_skill in sp_skills]
+
         skills = service_provider.skills
 
         for skill in skills:
             service_name = skill.service.name
             self.r.sadd("{0}:providers".format(service_name), service_provider.id)
-            self.r.sadd("sp:{0}:{1}:skills".format(service_provider.id, service_name), skill.name)
+            if skill.id in sp_skill_ids:
+                self.r.sadd("sp:{0}:{1}:skills".format(service_provider.id, service_name), skill.name)
 
         sp_dict = {
             "name":service_provider.name,
