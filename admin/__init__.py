@@ -6,11 +6,11 @@ import config
 
 admin_application = Application(
     [
-        (r'/api/serviceprovider/([\d]+)?/?', ServiceProviderHandler),
+        (r'/api/serviceprovider/(?P<id>[\d]+)?/?', ServiceProviderHandler),
         #(r'/api/serviceprovider/([\d]+)/verify/?', ServiceProviderVerifyHandler),
         (r'/api/serviceprovider/([\d]+)/job/?', ServiceProviderJobHandler),
         #(r'/api/serviceprovider/([\d]+)/gcm/?', ServiceProviderGCMHandler),
-        (r'/api/service/?', ServiceHandler),
+        #(r'/api/service/?', ServiceHandler),
         (r'/api/job/?', JobHandler),
         (r'/api/job/([\d]+)?/?', JobHandler),
         (r'/api/job/([\d]+)/start/?', JobStartHandler),

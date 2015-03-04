@@ -5,6 +5,7 @@ import config
 from utils import get_json_datetime
 
 
+#TODO optimize session access
 class Session(object):
     def __init__(self, sessionid=None):
         self.r = db.session_redis

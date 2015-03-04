@@ -11,23 +11,22 @@ from oauth2client import crypt
 import db
 from admin.service.serviceprovider import *
 from admin.service.job import *
-from admin.service.service import *
 from admin.service.user import *
 from admin.service.signup import *
 from admin.service.order import *
 from admin.tasks import admin_add_all
 from utils import model_to_dict, TornadoJSONEncoder
+from utils import sp, su
 from exc import AppException, handle_exceptions
 
 import config
 
 
-__all__ = ['ServiceProviderHandler', 'ServiceHandler', 'JobHandler',
-           'JobStartHandler', 'JobEndHandler', 'ServiceProviderVerifyHandler',
-           'JobAcceptHandler', 'JobRejectHandler', 'PopulateHandler',
-           'GoogleAuthHandler', 'ServiceProviderJobHandler',
-           'SignupEmail', 'OrderHandler',  'OrderStatusHandler','UserHandler',
-           'UserVerifyHandler']
+__all__ = ['ServiceProviderHandler', 'JobHandler',
+           'JobStartHandler', 'JobEndHandler', 'JobAcceptHandler',
+           'JobRejectHandler', 'PopulateHandler','GoogleAuthHandler',
+           'ServiceProviderJobHandler','SignupEmail', 'OrderHandler',
+           'OrderStatusHandler','UserHandler', 'UserVerifyHandler']
 
 
 class BaseHandler(RequestHandler, SessionMixin):
@@ -74,8 +73,8 @@ class BaseHandler(RequestHandler, SessionMixin):
         self.finish()
 
     def get_current_user(self):
-        if 'user_id' in self.session and 'user_type' in self.session:
-            return '%s:%s' % (self.session['user_type'], self.session['user_id'])
+        if 'buid' in self.session and 'user_type' in self.session:
+            return '%s:%s' % (self.session['user_type'], self.session['buid'])
 
 
 class ServiceProviderHandler(BaseHandler):
@@ -86,24 +85,23 @@ class ServiceProviderHandler(BaseHandler):
     def get_login_url(self):
         return '/api/serviceprovider/auth/google/'
 
-    @authenticated
+    @sp
     @handle_exceptions
-    def put(self, spid):
+    def put(self, id=None):
         data = self.check_input('update')
-        service_provider = update_service_provider(self.dbsession, spid,
-                                                   data)
+        service_provider = update_service_provider(self.dbsession, id, data)
         self.send_model_response(service_provider)
 
-    @authenticated
+    @sp
     @handle_exceptions
-    def get(self, spid):
-        service_provider = get_service_provider(self.dbsession, spid)
+    def get(self, id=None):
+        service_provider = get_service_provider(self.dbsession, id)
         self.send_model_response(service_provider)
 
-    @authenticated
+    @sp
     @handle_exceptions
-    def delete(self, spid):
-        is_deleted = get_service_provider(self.dbsession, spid)
+    def delete(self, id=None):
+        is_deleted = get_service_provider(self.dbsession, id)
         self.set_status(204)
         self.write('')
         self.finish()
@@ -123,66 +121,6 @@ class ServiceProviderHandler(BaseHandler):
             instance_or_query.id
         )
 
-        self.set_status(200)
-        self.set_header("Content-Type", "application/json")
-        self.write(json.dumps(models_dict, cls=TornadoJSONEncoder))
-        self.finish()
-
-
-class ServiceProviderVerifyHandler(BaseHandler):
-    resource_name = 'serviceprovider'
-
-    def get_login_url(self):
-        return '/api/serviceprovider/auth/google/'
-
-    @authenticated
-    @handle_exceptions
-    def post(self, spid):
-        phone_number = self.get_argument('phone_number', None)
-        otp = self.get_argument('otp', None)
-
-        if phone_number is not None:
-            initiate_verification(self.dbsession, spid, phone_number)
-        elif otp is not None:
-            verify_otp(self.dbsession, self.redisdb, spid, otp)
-        else:
-            self.set_status(400)
-
-
-class ServiceHandler(BaseHandler):
-    resource_name = 'service'
-    create_required = {'name'}
-
-    @authenticated
-    @handle_exceptions
-    def get(self):
-        services = get_services(self.dbsession)
-        self.send_model_response(services)
-
-    @authenticated
-    @handle_exceptions
-    def put(self):
-        data = json.loads(self.request.body)
-        update_services(self.dbsession, data)
-
-        services = get_services(self.dbsession)
-        self.send_model_response(services)
-
-    # TODO move this query to redis
-    def send_model_response(self, instance_or_query):
-        uri_kwargs = {
-            'resource_name': self.resource_name
-        }
-        models_dict = model_to_dict(
-            instance_or_query,
-            self.model_response_uris,
-            uri_kwargs
-        )
-        for obj in models_dict['objects']:
-            obj['skills'] = list(set([
-                skill['name']
-                for skill in obj['skills']
-            ]))
         self.set_status(200)
         self.set_header("Content-Type", "application/json")
         self.write(json.dumps(models_dict, cls=TornadoJSONEncoder))
@@ -296,8 +234,15 @@ class GoogleAuthHandler(BaseHandler, GoogleOAuth2Mixin):
                 user = handle_user_authentication(
                     self.dbsession, details, user_type
                 )
-                self.session['user_id'] = user.user_id
-                self.session['user_type'] = self.get_secure_cookie('user_type')
+
+                self.session['user_type'] = user_type
+                if user_type == 'admin':
+                    self.session['buid'] = user.id
+                    self.session['admin'] = "true"
+                elif user_type in ('service_provider', 'service_user'):
+                    self.session['buid'] = user.user_id
+                    self.session['uid'] = user.id
+
                 next_url = self.get_secure_cookie('next', None)
                 if next_url:
                     self.clear_cookie('next')
@@ -331,8 +276,15 @@ class GoogleAuthHandler(BaseHandler, GoogleOAuth2Mixin):
                 user = handle_user_authentication(
                     self.dbsession, details, user_type
                 )
+
                 self.session['user_type'] = user_type
-                self.session['user_id'] = user.id
+                if user_type == 'admin':
+                    self.session['buid'] = user.id
+                    self.session['admin'] = "true"
+                elif user_type in ('service_provider', 'service_user'):
+                    self.session['buid'] = user.user_id
+                    self.session['uid'] = user.id
+
                 self.send_model_response(user)
             except crypt.AppIdentityError:
                 self.set_status(403)
@@ -363,17 +315,13 @@ class OrderHandler(BaseHandler):
     create_required = {'service', 'request', 'scheduled',}
     update_ignored = {'id', 'status', 'completed', 'created'}
 
-    @authenticated
+    @su
     def post(self, oid):
-        if oid:
-            raise AppException('Invalid request')
-        if self.session['user_type'] != 'service_user':
-            raise AppException('Only service users can create orders')
         data = self.check_input('create')
         order = create_order(self.dbsession, data, self.session['user_id'])
         self.send_model_response(order)
 
-    @authenticated
+    @su
     def get(self, oid):
         orders = get_order(
             self.dbsession,
@@ -383,7 +331,7 @@ class OrderHandler(BaseHandler):
         )
         self.send_model_response(orders)
 
-    @authenticated
+    @su
     def put(self, oid):
         data = self.check_input('update')
         order = update_order(self.dbsession, oid, data)

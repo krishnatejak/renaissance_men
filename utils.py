@@ -4,6 +4,9 @@ import decimal
 import random
 
 from sqlalchemy.orm.query import Query
+from tornado.web import authenticated
+from tornado.web import HTTPError
+from functools import wraps
 
 import db
 
@@ -128,3 +131,45 @@ def get_json_datetime(date_time=None):
         now = datetime.datetime.now()
         return now.strftime(JSON_DATETIME_FORMAT)
     return date_time.strftime(JSON_DATETIME_FORMAT)
+
+
+# authorization methods
+def sp(function):
+    @wraps(function)
+    @authenticated
+    def wrapper(self, *args, **kwargs):
+        if not self.session['user_type'] == 'service_provider':
+                raise HTTPError(403)
+        if self.request.method in ("GET", "PUT", "DELETE"):
+            spid = kwargs['id'] if 'id' in kwargs else args[0]
+            print self.session['uid']
+            print spid
+            if self.session['uid'] != spid:
+                raise HTTPError(403)
+        if self.request.method == "POST":
+            if kwargs.get('id') or args:
+                raise HTTPError(403)
+        return function(self, *args, **kwargs)
+    return wrapper
+
+
+def su(function):
+    @wraps(function)
+    @authenticated
+    def wrapper(self, *args, **kwargs):
+        if not self.session['user_type'] == 'service_user':
+                raise HTTPError(403)
+        if self.request.method in ("GET", "PUT", "DELETE"):
+            spid = kwargs['id'] if 'id' in kwargs else args[0]
+
+            if self.session['uid'] != spid:
+                raise HTTPError(403)
+        if self.request.method == "POST":
+            if kwargs.get('id') or args:
+                raise HTTPError(403)
+        return function(self, *args, **kwargs)
+    return wrapper
+
+
+def admin(function):
+    pass
