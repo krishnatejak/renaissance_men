@@ -77,7 +77,8 @@ class DBTask(Task):
 
     @property
     def db(self):
-        self._dbsession = db.Session()
+        if not self._dbsession:
+            self._dbsession = db.Session()
         return self._dbsession
 
     @property

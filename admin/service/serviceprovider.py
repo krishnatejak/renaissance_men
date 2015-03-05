@@ -127,7 +127,7 @@ def update_skills(dbsession, spid, sid, skills):
             ServiceSkill
         ).filter(
             ServiceSkill.name == created_skill[0]
-        ).one()
+        ).all()
         if not service_skill:
             service_skill = ServiceSkill()
             service_skill.service_id = sid
