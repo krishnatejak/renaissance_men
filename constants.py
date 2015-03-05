@@ -1,0 +1,4 @@
+SLOT_NO_OF_DAYS = 3
+SLOT_DEFAULT_LAUNDRY_DURATION = {
+    "laundry" : 30
+}

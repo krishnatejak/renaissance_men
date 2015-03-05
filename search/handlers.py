@@ -3,9 +3,11 @@ import json
 from tornado.web import RequestHandler
 
 from session import SessionMixin
-from exc import handle_exceptions
+from exc import handle_exceptions, AppException
 import db
 from search.service.search_service import *
+from search.service.slots import *
+import constants
 
 __all__ = ['SearchHandler']
 
@@ -53,3 +55,14 @@ class SearchHandler(RequestHandler, SessionMixin):
 
         """
         pass
+
+class SlotHandler(RequestHandler, SessionMixin):
+    def initialize(self):
+        self.r = db.Redis()
+
+    @handle_exceptions
+    def get(self, service=None):
+        duration = self.get_argument("duration", constants.SLOT_DEFAULT_LAUNDRY_DURATION)
+        if not service:
+            raise AppException('Service not provided')
+        get_available_slots(self.r, service, duration)

@@ -6,6 +6,7 @@ from background import celery
 from background import DBTask
 from admin.models import *
 import config
+import constants
 from admin.service.sms import Sms
 
 @celery.task(name='admin.serviceprovider.add', base=DBTask, bind=True)
@@ -58,10 +59,24 @@ def update_service_provider(self, spid):
 
     for key in service_dict:
         redis_skills = self.r.smembers("sp:{0}:{1}:skills".format(spid, key))
+        self.r.sadd("sp:{0}:services".format(service_provider.id), key)
+        self.r.sadd("services:{0}:sps".format(key), service_provider.id)
+        self.r.zadd("{0}:availability:sps".format(key), 1 if service_provider.availability else 0,
+                        service_provider.id)
         db_skills = set(service_dict.get(key))
         deleted_skills = redis_skills - db_skills
         if deleted_skills:
             self.r.srem("sp:{0}:{1}:skills".format(spid, key),*deleted_skills)
+
+
+    service_names = service_dict.keys()
+    redis_services = self.r.smembers("sp:{0}:services".format(service_provider.id))
+    deleted_services = redis_services - set(service_names)
+    if deleted_services:
+        self.r.srem("sp:{0}:services".format(spid),*deleted_services)
+
+    for service in deleted_services:
+        self.r.srem("services:{0}:sps".format(service), service_provider.id)
 
     sp_dict = {
         "name":base_user.name,
@@ -83,6 +98,7 @@ def delete_service_provider(self, spid):
         service_name = skill.service.name
 
         self.r.srem("{0}:providers".format(service_name), spid)
+        self.r.srem("services:{0}:sps", spid)
         self.r.spop("sp:{0}:{1}:skills".format(spid, service_name))
 
     sp_dict = self.r.hgetall("sp:{0}".format(spid))
@@ -164,7 +180,9 @@ def admin_add_all(self):
                                     ServiceProviderSkill.service_provider_id == service_provider.id,
                                     ServiceProviderSkill.trash == False
                                 ).all()
-
+        base_user = self.db.query(BaseUser).filter(
+            BaseUser.id == service_provider.user_id
+        ).one()
         sp_skill_ids = [sp_skill.service_skill_id for sp_skill in sp_skills]
 
         skills = service_provider.skills
@@ -175,10 +193,20 @@ def admin_add_all(self):
             if skill.id in sp_skill_ids:
                 self.r.sadd("sp:{0}:{1}:skills".format(service_provider.id, service_name), skill.name)
 
+            self.r.sadd("services:{0}:sps".format(service_name), service_provider.id)
+            self.r.sadd("sp:{0}:availability".format(service_name), service_provider.availability)
+            #####
+            # Service availability service providers:
+            #   Saving the Service Provider id with score as 1 for available and 0 for not available
+            #####
+            #Todo Delete this when service provider is deleted
+            self.r.zadd("{0}:availability:sps".format(skill.service.name), 1 if service_provider.availability else 0,
+                        service_provider.id)
+
         sp_dict = {
-            "name":service_provider.name,
+            "name":base_user.name,
             "availability":service_provider.availability,
-            "phone_number":service_provider.phone_number,
+            "phone_number":base_user.phone_number,
             "home_location":service_provider.home_location,
             "office_location":service_provider.office_location,
             "service_range":service_provider.service_range
@@ -193,19 +221,19 @@ def admin_notify_gcm(msg, *gcm_reg_ids):
     multicast_msg = gcmclient.JSONMessage(gcm_reg_ids, msg)
     gcm.send(multicast_msg)
 
-@celery.task(name='admin.scheduler.laundry', base=DBTask, bind=True)
-def admin_scheduler_laundry(self):
+@celery.task(name='admin.scheduler', base=DBTask, bind=True)
+def admin_scheduler(self):
     utc = datetime.datetime.utcnow()
-    date = utc.strftime('%Y/%m/%d')
 
-    if not self.r.hgetall('scheduler:laundry:{0}'.format(date)):
-        self.r.hmset('scheduler:laundry:{0}'.format(date))
-        service_providers = self.db.query(ServiceProvider).filter(
-                                                Service.name == "laundry",
-                                                ServiceProviderService.service_id == Service.id,
-                                                ServiceProvider.id == ServiceProviderService.service_provider_id,
-                                                ServiceProvider.availability == True
-                                            ).all()
-        for service_provider in service_providers:
-            #Code to populate service provider time slots
-            pass
+    service_providers = self.db.query(ServiceProvider).filter(
+                                                        ServiceProvider.trash == False
+                                                    ).all()
+    for sp in service_providers:
+        for i in range(constants.SLOT_NO_OF_DAYS):
+            date = (utc + datetime.timedelta(days=i)).strftime('%m%d')
+            if not self.r.zcard('scheduler:{0}:{1}'.format(sp.id, date)):
+                kwargs = {}
+                for time in range(sp.day_start, sp.day_end, 5):
+                    kwargs[time] = time
+                no_slots_added = self.r.zadd('scheduler:{0}:{1}'.format(sp.id, date), **kwargs)
+

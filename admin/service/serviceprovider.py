@@ -30,6 +30,10 @@ def update_service_provider(dbsession, provider_id, data):
     if skills:
         for service_name, service_skills in skills.iteritems():
             service = get_or_create_service(dbsession, service_name)
+            sp_service = ServiceProviderService()
+            sp_service.service_provider_id = service_provider.id
+            sp_service.service_id = service.id
+            dbsession.add(sp_service)
             update_skills(dbsession, service_provider.id, service.id, service_skills)
 
     tasks.update_service_provider.apply_async(
