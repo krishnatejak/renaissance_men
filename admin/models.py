@@ -69,6 +69,8 @@ class ServiceProvider(db.Base):
     orders = relationship('Order', backref=backref('service_provider'))
     service_range = Column("service_range", Integer, default=5)
     trash = Column("trash", Boolean, default=False)
+    day_start = Column("day_start", Integer)
+    day_end = Column("day_end", Integer)
 
     skills = relationship("ServiceSkill", secondary='service_provider_skill')
 
