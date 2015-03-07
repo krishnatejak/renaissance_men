@@ -237,11 +237,11 @@ def populate_schedules(self):
     for sp in service_providers:
         for i in range(constants.SLOT_NO_OF_DAYS):
             date = (utc + datetime.timedelta(days=i)).strftime('%m%d')
-
             if not self.r.zcard('schedule:{0}:{1}'.format(sp.id, date)):
                 kwargs = {}
-                for time in range(sp.day_start, sp.day_end, 5):
+                for time in range(sp.day_start, sp.day_end):
                     kwargs[str(time)] = str(time)
+                print kwargs
                 self.r.zadd('schedule:{0}:{1}'.format(sp.id, date), **kwargs)
 
 

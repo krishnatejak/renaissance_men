@@ -30,13 +30,24 @@ def get_available_slots(redis, service):
         md = base_datetime.strftime('%m%d')
         available = False
         if sp_list:
+            print [
+                'schedule:{0}:{1}'.format(sp, md) for sp in sp_list
+            ]
             redis.zunionstore('free_slots', [
                 'schedule:{0}:{1}'.format(sp, md) for sp in sp_list
             ])
-            available = redis.zcard('final_slots') > 0
-            free_slots = redis.zrange('final_slots', 0, -1)
+            available = redis.zcard('free_slots') > 0
+            free_slots = redis.zrange('free_slots', 0, -1)
+            print free_slots
+            print duration
+            free_slots = [
+                int(free_slot)/duration for i, free_slot in enumerate(free_slots)
+                if not i % duration
+            ]
+            print free_slots
+            print len(time_slots)
             for free_slot in free_slots:
-                time_slots[free_slot]['available'] = True
+                time_slots[int(free_slot)]['available'] = True
         available_slots.append({
             "date": base_datetime,
             "available": available,
