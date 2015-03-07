@@ -61,8 +61,13 @@ def update_service_provider(self, spid):
         redis_skills = self.r.smembers("sp:{0}:{1}:skills".format(spid, key))
         self.r.sadd("sp:{0}:services".format(service_provider.id), key)
         self.r.sadd("services:{0}:sps".format(key), service_provider.id)
-        self.r.zadd("{0}:availability:sps".format(key), 1 if service_provider.availability else 0,
-                        service_provider.id)
+        spid = service_provider.id
+        availability = 1 if service_provider.availability else 0
+        kwargs = {str(spid): availability}
+        self.r.zadd(
+            "{0}:availability:sps".format(key),
+            **kwargs
+        )
         db_skills = set(service_dict.get(key))
         deleted_skills = redis_skills - db_skills
         if deleted_skills:
@@ -221,19 +226,37 @@ def admin_notify_gcm(msg, *gcm_reg_ids):
     multicast_msg = gcmclient.JSONMessage(gcm_reg_ids, msg)
     gcm.send(multicast_msg)
 
-@celery.task(name='admin.scheduler', base=DBTask, bind=True)
-def admin_scheduler(self):
+
+@celery.task(name='admin.scheduler.populate', base=DBTask, bind=True)
+def populate_schedules(self):
     utc = datetime.datetime.utcnow()
 
     service_providers = self.db.query(ServiceProvider).filter(
-                                                        ServiceProvider.trash == False
-                                                    ).all()
+        ServiceProvider.trash == False
+    ).all()
     for sp in service_providers:
         for i in range(constants.SLOT_NO_OF_DAYS):
             date = (utc + datetime.timedelta(days=i)).strftime('%m%d')
-            if not self.r.zcard('scheduler:{0}:{1}'.format(sp.id, date)):
+
+            if not self.r.zcard('schedule:{0}:{1}'.format(sp.id, date)):
                 kwargs = {}
                 for time in range(sp.day_start, sp.day_end, 5):
-                    kwargs[time] = time
-                no_slots_added = self.r.zadd('scheduler:{0}:{1}'.format(sp.id, date), **kwargs)
+                    kwargs[str(time)] = str(time)
+                self.r.zadd('schedule:{0}:{1}'.format(sp.id, date), **kwargs)
 
+
+@celery.task(name='admin.scheduler.clean', base=DBTask, bind=True)
+def clean_schedules(self):
+    """runs every five minutes and removes the expired 5min slot"""
+    utcnow = datetime.datetime.utcnow()
+    interval = (utcnow.hour * 60 + utcnow.minute)/5 - 1
+    utcnow = utcnow.strftime('%m%d')
+    spids = self.db.query(ServiceProvider.id).filter(
+        ServiceProvider.trash == False
+    )
+
+    spids = zip(*spids)[0]
+    pipe = self.r.pipeline()
+    for spid in spids:
+        pipe.zremrangebyscore("schedule:{0}:{1}".format(spid, utcnow), 0, interval)
+    pipe.execute()

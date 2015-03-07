@@ -3,6 +3,8 @@ from __future__ import absolute_import
 from celery import Celery
 from celery import Task
 from kombu import Exchange, Queue
+from datetime import timedelta
+from celery.schedules import crontab
 
 import config
 import db
@@ -61,12 +63,33 @@ celery.conf.update(
             delivery_mode=1,
             durable=False
         ),
+        Queue(
+            'admin.schedule',
+            Exchange('admin'),
+            routing_key='admin.schedule',
+            delivery_mode=1,
+            durable=False
+        ),
 
     ),
     CELERY_IMPORTS=(
         "admin.tasks",
         "search.tasks",
     ),
+    CELERYBEAT_SCHEDULE={
+        'clean_slots': {
+            'task': 'admin.scheduler.clean',
+            'schedule': timedelta(minutes=5),
+            'args': (),
+            'options': {'queue': 'admin.schedule'},
+        },
+        'populate_slots': {
+            'task': 'admin.scheduler.populate',
+            'schedule': crontab(minute=0, hour=0),
+            'args': (),
+            'options': {'queue': 'admin.schedule'},
+        }
+    }
 )
 
 
@@ -87,12 +110,10 @@ class DBTask(Task):
         return self._redis
 
     def on_success(self, retval, task_id, args, kwargs):
-        if self.db:
-            self.db.close()
+        self.db.close()
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
-        if self.db:
-            self.db.close()
+        self.db.close()
 
 
 if __name__ == "__main__":

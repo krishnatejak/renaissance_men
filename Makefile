@@ -1,7 +1,7 @@
 run_celery_dev:
 	echo "starting celery dev";\
 	rabbitmq-server -detached;\
-	celery worker --app=background -c1 -l info;\
+	celery worker --app=background -c1 -l info --beat;\
 
 run_celery:
 	echo "starting celery";\

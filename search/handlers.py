@@ -7,9 +7,8 @@ from exc import handle_exceptions, AppException
 import db
 from search.service.search_service import *
 from search.service.slots import *
-import constants
-
-__all__ = ['SearchHandler']
+from utils import TornadoJSONEncoder
+__all__ = ['SearchHandler', 'SlotHandler']
 
 
 class SearchHandler(RequestHandler, SessionMixin):
@@ -56,13 +55,17 @@ class SearchHandler(RequestHandler, SessionMixin):
         """
         pass
 
+
 class SlotHandler(RequestHandler, SessionMixin):
     def initialize(self):
         self.r = db.Redis()
 
     @handle_exceptions
     def get(self, service=None):
-        duration = self.get_argument("duration", constants.SLOT_DEFAULT_LAUNDRY_DURATION)
-        if not service:
-            raise AppException('Service not provided')
-        get_available_slots(self.r, service, duration)
+        available_slots = get_available_slots(self.r, service)
+        self.set_status(200)
+        self.set_header("Content-Type", "application/json")
+        self.write(json.dumps({
+            'available_slots': available_slots
+        }, cls=TornadoJSONEncoder))
+        self.flush()
