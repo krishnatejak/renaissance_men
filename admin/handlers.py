@@ -316,12 +316,16 @@ class OrderHandler(BaseHandler):
     update_ignored = {'id', 'status', 'completed', 'created'}
 
     @su
+    @handle_exceptions
     def post(self, oid):
         data = self.check_input('create')
-        order = create_order(self.dbsession, data, self.session['user_id'])
+        order = create_order(
+            self.dbsession, self.redisdb, data, self.session['user_id']
+        )
         self.send_model_response(order)
 
     @su
+    @handle_exceptions
     def get(self, oid):
         orders = get_order(
             self.dbsession,
@@ -332,6 +336,7 @@ class OrderHandler(BaseHandler):
         self.send_model_response(orders)
 
     @su
+    @handle_exceptions
     def put(self, oid):
         data = self.check_input('update')
         order = update_order(self.dbsession, oid, data)

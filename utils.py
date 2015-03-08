@@ -142,8 +142,6 @@ def sp(function):
                 raise HTTPError(403)
         if self.request.method in ("GET", "PUT", "DELETE"):
             spid = kwargs['id'] if 'id' in kwargs else args[0]
-            print self.session['uid']
-            print spid
             if self.session['uid'] != spid:
                 raise HTTPError(403)
         if self.request.method == "POST":

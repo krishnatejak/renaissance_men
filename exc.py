@@ -8,6 +8,9 @@ class AppException(Exception):
     pass
 
 
+class AssignmentException(Exception):
+    pass
+
 def handle_exceptions(function):
     def _wrapper(instance, *args, **kwargs):
         try:
