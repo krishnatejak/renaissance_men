@@ -38,11 +38,19 @@ def get_available_slots(redis, service):
             ])
             available = redis.zcard('free_slots') > 0
             free_slots = redis.zrange('free_slots', 0, -1)
-            free_slots = [
-                int(free_slot) / duration for i, free_slot in
-                enumerate(free_slots)
-                if not i % duration
-            ]
+            if day == 0:
+                interval = (now.hour * 60 + now.minute)/5 + 36
+                free_slots = [
+                    int(free_slot)/duration for i, free_slot in
+                    enumerate(free_slots)
+                    if not int(free_slot) % duration and int(free_slot) > interval
+                ]
+            else:
+                free_slots = [
+                    int(free_slot)/duration for i, free_slot in
+                    enumerate(free_slots)
+                    if not int(free_slot) % duration
+                ]
             for free_slot in free_slots:
                 time_slots[free_slot]['available'] = True
         available_slots.append({
@@ -72,7 +80,7 @@ def assign_slot_to_sp(redis, service, slot_datetime, block=False):
     slot_datetime = parse_json_datetime(slot_datetime)
 
     now = datetime.datetime.now()
-    if slot_datetime < now:
+    if slot_datetime < now + datetime.timedelta(hours=3):
         raise AssignmentException('Cannot assign slot in past')
 
     now3 = datetime.datetime(now.year, now.month, now.day + 3)
