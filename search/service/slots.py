@@ -92,7 +92,7 @@ def assign_slot_to_sp(redis, service, slot_datetime):
     md = slot_datetime.strftime('%m%d')
     slot = (slot_datetime.hour * 60 + slot_datetime.minute)/5
     duration = constants.SLOT_DEFAULT_DURATION[service]/5
-    slot_end = slot + duration
+    slot_end = slot + duration -1
 
     for sp in sp_list:
         slots = redis.zrangebyscore(

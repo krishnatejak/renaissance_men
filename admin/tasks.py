@@ -239,9 +239,10 @@ def populate_schedules(self):
             date = (utc + datetime.timedelta(days=i)).strftime('%m%d')
             if not self.r.zcard('schedule:{0}:{1}'.format(sp.id, date)):
                 kwargs = {}
+                print sp.day_start
+                print sp.day_end
                 for time in range(sp.day_start, sp.day_end):
                     kwargs[str(time)] = str(time)
-                print kwargs
                 self.r.zadd('schedule:{0}:{1}'.format(sp.id, date), **kwargs)
 
 
