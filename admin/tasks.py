@@ -229,14 +229,14 @@ def admin_notify_gcm(msg, *gcm_reg_ids):
 
 @celery.task(name='admin.scheduler.populate', base=DBTask, bind=True)
 def populate_schedules(self):
-    utc = datetime.datetime.utcnow()
+    now = datetime.datetime.now()
 
     service_providers = self.db.query(ServiceProvider).filter(
         ServiceProvider.trash == False
     ).all()
     for sp in service_providers:
         for i in range(constants.SLOT_NO_OF_DAYS):
-            date = (utc + datetime.timedelta(days=i)).strftime('%m%d')
+            date = (now + datetime.timedelta(days=i)).strftime('%m%d')
             if not self.r.zcard('schedule:{0}:{1}'.format(sp.id, date)):
                 kwargs = {}
                 print sp.day_start
@@ -249,9 +249,9 @@ def populate_schedules(self):
 @celery.task(name='admin.scheduler.clean', base=DBTask, bind=True)
 def clean_schedules(self):
     """runs every five minutes and removes the expired 5min slot"""
-    utcnow = datetime.datetime.utcnow()
-    interval = (utcnow.hour * 60 + utcnow.minute)/5 - 1
-    utcnow = utcnow.strftime('%m%d')
+    now = datetime.datetime.now()
+    interval = (now.hour * 60 + now.minute)/5 - 1
+    now = now.strftime('%m%d')
     spids = self.db.query(ServiceProvider.id).filter(
         ServiceProvider.trash == False
     )
@@ -259,5 +259,5 @@ def clean_schedules(self):
     spids = zip(*spids)[0]
     pipe = self.r.pipeline()
     for spid in spids:
-        pipe.zremrangebyscore("schedule:{0}:{1}".format(spid, utcnow), 0, interval)
+        pipe.zremrangebyscore("schedule:{0}:{1}".format(spid, now), 0, interval)
     pipe.execute()
