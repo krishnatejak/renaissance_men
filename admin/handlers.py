@@ -318,7 +318,7 @@ class OrderHandler(BaseHandler):
 
     @su
     @handle_exceptions
-    def post(self, oid):
+    def post(self):
         data = self.check_input('create')
         order = create_order(
             self.dbsession, self.redisdb, data, self.session['user_id']
@@ -327,10 +327,10 @@ class OrderHandler(BaseHandler):
 
     @su
     @handle_exceptions
-    def get(self, oid):
+    def get(self, id=None):
         orders = get_order(
             self.dbsession,
-            oid=oid,
+            oid=id,
             user_type=self.session['user_type'],
             user_id=self.session['user_id']
         )
@@ -338,9 +338,9 @@ class OrderHandler(BaseHandler):
 
     @su
     @handle_exceptions
-    def put(self, oid):
+    def put(self, id=None):
         data = self.check_input('update')
-        order = update_order(self.dbsession, oid, data)
+        order = update_order(self.dbsession, id, data)
         self.send_model_response(order)
 
 

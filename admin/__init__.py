@@ -19,7 +19,7 @@ admin_application = Application(
         (r'/api/job/([\d]+)/reject/?', JobRejectHandler),
         (r'/api/populate/all/?', PopulateHandler),
         (r'/api/auth/google/?', GoogleAuthHandler),
-        (r'/api/order/([\d]+)?/?', OrderHandler),
+        (r'/api/order/(?P<id>[\d]+)?/?', OrderHandler),
         (r'/api/order/([\d]+)/serviceprovider/', OrderHandler),
         (r'/api/order/([\w]+)/', OrderStatusHandler),
         (r'/api/user/([\d]+)/verify/', UserVerifyHandler),
