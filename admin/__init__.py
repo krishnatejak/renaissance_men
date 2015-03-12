@@ -24,7 +24,8 @@ admin_application = Application(
         (r'/api/order/([\w]+)/', OrderStatusHandler),
         (r'/api/user/([\d]+)/verify/', UserVerifyHandler),
         (r'/api/user/([\d]+)?/?', UserHandler),
-        (r'/api/signup/?', SignupEmail)
+        (r'/api/signup/?', SignupEmail),
+        (r'/api/close', CloseHandler)
     ],
     google_oauth={
         "key": config.GOOGLE_OAUTH2_CLIENT_ID,

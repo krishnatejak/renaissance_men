@@ -26,7 +26,8 @@ __all__ = ['ServiceProviderHandler', 'JobHandler',
            'JobStartHandler', 'JobEndHandler', 'JobAcceptHandler',
            'JobRejectHandler', 'PopulateHandler','GoogleAuthHandler',
            'ServiceProviderJobHandler','SignupEmail', 'OrderHandler',
-           'OrderStatusHandler','UserHandler', 'UserVerifyHandler']
+           'OrderStatusHandler','UserHandler', 'UserVerifyHandler',
+           'CloseHandler']
 
 
 class BaseHandler(RequestHandler, SessionMixin):
@@ -386,3 +387,9 @@ class UserVerifyHandler(BaseHandler):
             verify_otp(self.dbsession, self.redisdb, uid, otp)
         else:
             raise AppException('otp required to verify user')
+
+
+class CloseHandler(RequestHandler):
+
+    def get(self):
+        self.flush()
