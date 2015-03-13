@@ -126,6 +126,18 @@ def verify_user_phone(self, uid):
     )
     otp_sms.send_sms()
 
+@celery.task(name='admin.order.created', base=DBTask, bind=True)
+def post_order_creation(self, spid, slot_start, order_id):
+    phone_number = self.db.query(BaseUser.phone_number).filter(
+        ServiceProvider.id == spid,
+        ServiceProvider.user_id == BaseUser.id,
+
+    ).one()
+    sp_sms = Sms(
+        phone_number,
+        "Laundry pickup scheduled at %s. Oder-id is %s" %(slot_start ,order_id)
+    )
+    sp_sms.send_sms()
 
 @celery.task(name='admin.job.create', base=DBTask, bind=True)
 def create_job(self, jid):
@@ -199,14 +211,16 @@ def admin_add_all(self):
                 self.r.sadd("sp:{0}:{1}:skills".format(service_provider.id, service_name), skill.name)
 
             self.r.sadd("services:{0}:sps".format(service_name), service_provider.id)
-            self.r.sadd("sp:{0}:availability".format(service_name), service_provider.availability)
+            self.r.sadd("sp:{0}:availability".format(service_name), service_provider.id)
             #####
             # Service availability service providers:
             #   Saving the Service Provider id with score as 1 for available and 0 for not available
             #####
             #Todo Delete this when service provider is deleted
-            self.r.zadd("{0}:availability:sps".format(skill.service.name), 1 if service_provider.availability else 0,
-                        service_provider.id)
+            self.r.zadd(
+                "{0}:availability:sps".format(skill.service.name),
+                **{str(service_provider.id): 1 if service_provider.availability else 0}
+            )
 
         sp_dict = {
             "name":base_user.name,
@@ -239,8 +253,6 @@ def populate_schedules(self):
             date = (now + datetime.timedelta(days=i)).strftime('%m%d')
             if not self.r.zcard('schedule:{0}:{1}'.format(sp.id, date)):
                 kwargs = {}
-                print sp.day_start
-                print sp.day_end
                 for time in range(sp.day_start, sp.day_end):
                     kwargs[str(time)] = str(time)
                 self.r.zadd('schedule:{0}:{1}'.format(sp.id, date), **kwargs)

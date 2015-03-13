@@ -31,6 +31,7 @@ SERVICE_QUEUE = 'admin.service'
 JOB_QUEUE = 'admin.job'
 USER_QUEUE = 'admin.user'
 SEARCH_GET_DISTANCE_QUEUE = 'search.getdistances'
+ORDER_QUEUE = 'admin.order'
 
 TWILIO_ACCOUNT_SID = 'AC6193f21a81db598c4e385ca160dd1594'
 TWILIO_AUTH_TOKEN = '0c91e2dc901fba5d1a1cf1b1de02c107'
