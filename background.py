@@ -57,6 +57,13 @@ celery.conf.update(
             durable=False
         ),
         Queue(
+            'admin.order',
+            Exchange('admin'),
+            routing_key='admin.order',
+            delivery_mode=1,
+            durable=False
+        ),
+        Queue(
             'search.getdistances',
             Exchange('admin'),
             routing_key='search.getdistances',
@@ -85,7 +92,7 @@ celery.conf.update(
         },
         'populate_slots': {
             'task': 'admin.scheduler.populate',
-            'schedule': crontab(minute=0, hour=0),
+            'schedule': timedelta(minutes=1),
             'args': (),
             'options': {'queue': 'admin.schedule'},
         }

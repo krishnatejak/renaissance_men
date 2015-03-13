@@ -318,7 +318,7 @@ class OrderHandler(BaseHandler):
 
     @su
     @handle_exceptions
-    def post(self):
+    def post(self, id=None):
         data = self.check_input('create')
         order = create_order(
             self.dbsession, self.redisdb, data, self.session['user_id']
