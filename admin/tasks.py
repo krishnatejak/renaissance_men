@@ -133,10 +133,12 @@ def post_order_creation(self, spid, slot_start, order_id):
         ServiceProvider.user_id == BaseUser.id,
 
     ).one()
-    sp_sms = Sms(
-        phone_number,
-        "Laundry pickup scheduled at %s. Oder-id is %s" %(slot_start ,order_id)
-    )
+
+    kwargs = {
+        "to_number": str(phone_number.phone_number),
+        "body":"Laundry pickup scheduled at %s. Oder-id is %s" %(slot_start ,order_id)
+    }
+    sp_sms = Sms(**kwargs)
     sp_sms.send_sms()
 
 @celery.task(name='admin.job.create', base=DBTask, bind=True)
