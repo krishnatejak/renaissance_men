@@ -363,16 +363,14 @@ class UserHandler(BaseHandler):
     update_ignored = {'verified', 'id', 'admin', 'email'}
 
     @authenticated
-    def get(self, uid):
-        if uid and uid != self.session['user_id']:
-            raise AppException('Cannot access resource')
-        user = get_user(self.dbsession, self.session['user_id'])
+    def get(self):
+        user = get_user(self.dbsession, self.session['buid'])
         self.send_model_response(user)
 
     @authenticated
-    def put(self, uid):
+    def put(self):
         data = self.check_input('update')
-        user = update_user(self.dbsession, uid, data)
+        user = update_user(self.dbsession, self.session['buid'], data)
         self.send_model_response(user)
 
 
