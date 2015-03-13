@@ -91,12 +91,12 @@ def model_to_dict(instance_or_query, response_uris, uri_kwargs):
                     for e in instance.Meta.follow
                 }
             )
-            uri_kwargs['id'] = instance.id
-            model_urls = {
-                k: v.format(**uri_kwargs)
-                for k, v in response_uris.iteritems()
-            }
-            models_dict['urls'] = model_urls
+            #uri_kwargs['id'] = instance.id
+            #model_urls = {
+            #    k: v.format(**uri_kwargs)
+            #    for k, v in response_uris.iteritems()
+            #}
+            #models_dict['urls'] = model_urls
             models_list.append(models_dict)
         return response_dict
     elif isinstance(instance_or_query, db.Base):
@@ -107,12 +107,12 @@ def model_to_dict(instance_or_query, response_uris, uri_kwargs):
                 for e in instance_or_query.Meta.follow
             }
         )
-        uri_kwargs['id'] = instance_or_query.id
-        model_urls = {
-            k: v.format(**uri_kwargs)
-            for k, v in response_uris.iteritems()
-        }
-        models_dict['urls'] = model_urls
+        #uri_kwargs['id'] = instance_or_query.id
+        #model_urls = {
+        #    k: v.format(**uri_kwargs)
+        #    for k, v in response_uris.iteritems()
+        #}
+        #models_dict['urls'] = model_urls
         return models_dict
 
 
