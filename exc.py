@@ -15,7 +15,7 @@ def handle_exceptions(function):
     def _wrapper(instance, *args, **kwargs):
         try:
             return function(instance, *args, **kwargs)
-        except AppException as ae:
+        except (AppException, AssignmentException) as ae:
             logging.warn(traceback.format_exc())
             instance.set_status(400)
             instance.write({
@@ -24,7 +24,7 @@ def handle_exceptions(function):
             instance.flush()
         except (NoResultFound, MultipleResultsFound):
             logging.warn(traceback.format_exc())
-            instance.set_status(400)
+            instance.set_status(404)
             instance.write({
                 'error': 'No results found'
             })
