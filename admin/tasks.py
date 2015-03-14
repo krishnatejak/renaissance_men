@@ -133,7 +133,7 @@ def post_order_creation(self, spid, slot_start, order_id):
         ServiceProvider.user_id == BaseUser.id,
 
     ).one()
-    order = self.db.query(Order).query(
+    order = self.db.query(Order).filter(
         Order.id == order_id
     ).one()
     slot_start = slot_start.strftime('%B %d %I:%M %p')
