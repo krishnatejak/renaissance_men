@@ -260,6 +260,9 @@ def populate_schedules(self):
         ServiceProvider.trash == False
     ).all()
     for sp in service_providers:
+        if not sp.day_end or not sp.day_end:
+            continue
+
         for i in range(constants.SLOT_NO_OF_DAYS):
             date = (now + datetime.timedelta(days=i)).strftime('%m%d')
             if not self.r.zcard('schedule:{0}:{1}'.format(sp.id, date)):
