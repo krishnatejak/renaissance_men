@@ -321,7 +321,7 @@ class OrderHandler(BaseHandler):
     def post(self, id=None):
         data = self.check_input('create')
         order = create_order(
-            self.dbsession, self.redisdb, data, self.session['user_id']
+            self.dbsession, self.redisdb, data, self.session['uid']
         )
         self.send_model_response(order)
 
@@ -332,7 +332,7 @@ class OrderHandler(BaseHandler):
             self.dbsession,
             oid=id,
             user_type=self.session['user_type'],
-            user_id=self.session['user_id']
+            user_id=self.session['uid']
         )
         self.send_model_response(orders)
 
@@ -353,7 +353,7 @@ class OrderStatusHandler(BaseHandler):
             self.dbsession,
             status,
             self.session['user_type'],
-            self.session['user_id']
+            self.session['uid']
         )
         self.send_model_response(orders)
 
