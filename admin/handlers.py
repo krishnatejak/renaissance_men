@@ -313,7 +313,7 @@ class SignupEmail(BaseHandler):
 
 class OrderHandler(BaseHandler):
     resource_name = 'order'
-    create_required = {'service', 'request', 'scheduled',}
+    create_required = {'service', 'request', 'scheduled', 'address'}
     update_ignored = {'id', 'status', 'completed', 'created'}
 
     @su

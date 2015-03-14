@@ -6,7 +6,7 @@ from datetime import datetime
 import db
 
 __all__ = ['Service', 'ServiceProvider', 'Job', 'ServiceSkill', 'BaseUser',
-           'ServiceUser', 'ServiceProviderService', 'Event', 'ServiceProviderSkill']
+           'ServiceUser', 'ServiceProviderService', 'Event', 'ServiceProviderSkill', 'Order']
 
 
 class Service(db.Base):

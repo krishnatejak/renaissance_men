@@ -133,10 +133,19 @@ def post_order_creation(self, spid, slot_start, order_id):
         ServiceProvider.user_id == BaseUser.id,
 
     ).one()
-
+    order = self.db.query(Order).query(
+        Order.id == order_id
+    ).one()
+    slot_start = slot_start.strftime('%B %d %I:%M %p')
+    message = '{service} pickup at {time} at {address}. Order {order_id}.'.format(
+        service=order.service,
+        time=slot_start,
+        order_id=order_id,
+        address=order.address
+    )
     kwargs = {
         "to_number": str(phone_number.phone_number),
-        "body":"Laundry pickup scheduled at %s. Oder-id is %s" %(slot_start ,order_id)
+        "body": message
     }
     sp_sms = Sms(**kwargs)
     sp_sms.send_sms()
