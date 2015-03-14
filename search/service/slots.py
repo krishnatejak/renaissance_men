@@ -9,7 +9,7 @@ from exc import AssignmentException
 def get_available_slots(redis, service):
     now = datetime.datetime.now()
     available_slots = []
-    for day in range(3):
+    for day in range(constants.SLOT_NO_OF_DAYS):
         time_slots = []
         duration = constants.SLOT_DEFAULT_DURATION[service] / 5
         base_datetime = datetime.datetime(now.year, now.month, now.day)
