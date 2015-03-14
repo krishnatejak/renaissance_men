@@ -136,13 +136,19 @@ def post_order_creation(self, spid, slot_start, order_id):
     order = self.db.query(Order).filter(
         Order.id == order_id
     ).one()
+    cust_phnum = self.db.query(BaseUser.phone_number).filter(
+        ServiceUser.id == order.service_user_id,
+        BaseUser.id == ServiceUser.user_id
+    ).one()
     slot_start = slot_start.strftime('%B %d %I:%M %p')
-    message = '{service} pickup at {time} at {address}. Order {order_id}.'.format(
-        service=order.service,
-        time=slot_start,
-        order_id=order_id,
-        address=order.address
-    )
+    message = '{service} pickup at {time} at {address}. Order {order_id}. Phone number of customer' \
+              ' is {phone_number}'.format(
+                                        service=order.service,
+                                        time=slot_start,
+                                        order_id=order_id,
+                                        address=order.address,
+                                        phone_number=cust_phnum.phone_number
+                                    )
     kwargs = {
         "to_number": str(phone_number.phone_number),
         "body": message
