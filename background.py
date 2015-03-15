@@ -92,7 +92,7 @@ celery.conf.update(
         },
         'populate_slots': {
             'task': 'admin.scheduler.populate',
-            'schedule': timedelta(minutes=1),
+            'schedule': crontab(minute=0, hour=0),
             'args': (),
             'options': {'queue': 'admin.schedule'},
         }
