@@ -271,7 +271,7 @@ def populate_schedules(self):
             continue
 
         for i in range(constants.SLOT_NO_OF_DAYS):
-            date = (now + datetime.timedelta(days=i)).strftime('%m%d')
+            date = (now + datetime.timedelta(days=i+1)).strftime('%m%d')
             if not self.r.zcard('schedule:{0}:{1}'.format(sp.id, date)):
                 kwargs = {}
                 for time in range(sp.day_start, sp.day_end):
