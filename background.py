@@ -20,6 +20,7 @@ celery.conf.update(
     CELERY_ACCEPT_CONTENT=['pickle'],
     CELERY_CREATE_MISSING_QUEUES=False,
     CELERY_DEFAULT_QUEUE='default',
+    CELERY_TIMEZONE='Asia/Kolkata',
     CELERY_QUEUES=(
         Queue(
             'default',
@@ -92,7 +93,7 @@ celery.conf.update(
         },
         'populate_slots': {
             'task': 'admin.scheduler.populate',
-            'schedule': crontab(minute=0, hour=0),
+            'schedule': crontab(minute=30, hour=19),
             'args': (),
             'options': {'queue': 'admin.schedule'},
         }
