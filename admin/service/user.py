@@ -44,15 +44,15 @@ def update_user(dbsession, uid, data):
 
     update_model_from_dict(user, data)
 
+    dbsession.add(user)
+    dbsession.commit()
     # if phone number is changed initiated verification
     if phone_number_changed and user.phone_number:
         user.verified = False
         tasks.verify_user_phone.apply_async(
             (user.id,),
             queue=config.USER_QUEUE
-        )
-    dbsession.add(user)
-    dbsession.commit()
+    )
     return user
 
 def get_user(dbsession, user_id):
