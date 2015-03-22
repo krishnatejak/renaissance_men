@@ -136,8 +136,9 @@ def get_json_datetime(date_time=None):
 # authorization methods
 def sp(function):
     @wraps(function)
-    @authenticated
     def wrapper(self, *args, **kwargs):
+        if not self.current_user:
+            raise HTTPError(401)
         if not self.session['user_type'] == 'service_provider':
                 raise HTTPError(403)
         if self.request.method in ("GET", "PUT", "DELETE"):
@@ -155,6 +156,8 @@ def su(function):
     @wraps(function)
     @authenticated
     def wrapper(self, *args, **kwargs):
+        if not self.current_user:
+            raise HTTPError(401)
         if not self.session['user_type'] == 'service_user':
                 raise HTTPError(403)
         if self.request.method in ("GET", "PUT", "DELETE"):
