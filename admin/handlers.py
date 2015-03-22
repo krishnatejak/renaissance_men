@@ -83,9 +83,6 @@ class ServiceProviderHandler(BaseHandler):
     create_required = {'name', 'phone_number'}
     update_ignored = {'service'}
 
-    def get_login_url(self):
-        return '/api/serviceprovider/auth/google/'
-
     @sp
     @handle_exceptions
     def put(self, id=None):
@@ -98,14 +95,6 @@ class ServiceProviderHandler(BaseHandler):
     def get(self, id=None):
         service_provider = get_service_provider(self.dbsession, id)
         self.send_model_response(service_provider)
-
-    @sp
-    @handle_exceptions
-    def delete(self, id=None):
-        is_deleted = get_service_provider(self.dbsession, id)
-        self.set_status(204)
-        self.write('')
-        self.finish()
 
     def send_model_response(self, instance_or_query):
         uri_kwargs = {

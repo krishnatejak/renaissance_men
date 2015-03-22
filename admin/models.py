@@ -1,12 +1,13 @@
 from sqlalchemy import Column, Integer, String, Boolean, Float, ForeignKey
 from sqlalchemy import DateTime, Enum
-from sqlalchemy.dialects.postgres import ARRAY
+from sqlalchemy.dialects.postgres import ARRAY, JSON
 from sqlalchemy.orm import relationship, backref
 from datetime import datetime
 import db
 
 __all__ = ['Service', 'ServiceProvider', 'Job', 'ServiceSkill', 'BaseUser',
-           'ServiceUser', 'ServiceProviderService', 'Event', 'ServiceProviderSkill', 'Order']
+           'ServiceUser', 'ServiceProviderService', 'ServiceProviderSkill',
+           'Orders']
 
 
 class Service(db.Base):
@@ -66,7 +67,7 @@ class ServiceProvider(db.Base):
     cost = Column("cost", Float, default=0.0)
     experience = Column("experience", Float, default=0.0)
     jobs = relationship('Job', backref=backref('service_provider'))
-    orders = relationship('Order', backref=backref('service_provider'))
+    orders = relationship('Orders', backref=backref('service_provider'))
     service_range = Column("service_range", Integer, default=5)
     trash = Column("trash", Boolean, default=False)
     day_start = Column("day_start", Integer)
@@ -95,7 +96,7 @@ class ServiceUser(db.Base):
     user_id = Column("user_id", ForeignKey('base_user.id'))
     location = Column("location", ARRAY(Float, dimensions=1))
     jobs = relationship('Job', backref=backref('service_user'))
-    orders = relationship('Order', backref=backref('service_user'))
+    orders = relationship('Orders', backref=backref('service_user'))
 
     class Meta(object):
         follow = ['user']
@@ -168,15 +169,15 @@ class Signupemail(db.Base):
         fk = []
 
 
-class Order(db.Base):
-    __tablename__ = 'order'
+class Orders(db.Base):
+    __tablename__ = 'orders'
 
     status_types = ('created', 'processing', 'assigned', 'completed')
 
     id = Column(Integer, primary_key=True)
     service = Column("service", String(256))
     location = Column("location", ARRAY(Float, dimensions=1))
-    status = Column("status", Enum(*status_types, name='order_status_types'), default='created')
+    status = Column("status", Enum(*status_types, name='orders_status_types'), default='created')
     request = Column("request", String(2048))
     scheduled = Column("scheduled", DateTime(timezone=True))
     created = Column("created", DateTime(timezone=True), default=datetime.utcnow())
@@ -185,21 +186,7 @@ class Order(db.Base):
     service_user_id = Column("service_user_id", ForeignKey("service_user.id"))
     service_provider_id = Column("service_provider_id", ForeignKey("service_provider.id"))
     job_id = Column("job_id", ForeignKey("job.id"))
-
-    class Meta(object):
-        follow = []
-        follow_exclude = []
-        exclude = []
-        fk = []
-
-class Event(db.Base):
-    __tablename__ = 'event'
-
-    id = Column(Integer, primary_key=True)
-    start_time = Column("start_time", DateTime(timezone=True))
-    end_time = Column("end_time", DateTime(timezone=True))
-    order_id = Column("order_id", ForeignKey("order.id"))
-    trash = Column("trash", Boolean, default=False)
+    details = Column("details", JSON())
 
     class Meta(object):
         follow = []

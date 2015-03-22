@@ -133,8 +133,8 @@ def post_order_creation(self, spid, slot_start, order_id):
         ServiceProvider.user_id == BaseUser.id,
 
     ).one()
-    order = self.db.query(Order).filter(
-        Order.id == order_id
+    order = self.db.query(Orders).filter(
+        Orders.id == order_id
     ).one()
     cust_phnum = self.db.query(BaseUser.phone_number, BaseUser.name).filter(
         ServiceUser.id == order.service_user_id,
