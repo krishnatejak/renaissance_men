@@ -29,6 +29,7 @@ admin_application = Application(
     ],
     google_oauth={
         "key": config.GOOGLE_OAUTH2_CLIENT_ID,
+        "device_key": config.GOOGLE_OAUTH2_DEVICE_CLIENT_ID,
         "secret": config.GOOGLE_OAUTH2_CLIENT_SECRET,
     },
     cookie_secret=config.COOKIE_SECRET,

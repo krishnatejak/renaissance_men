@@ -261,7 +261,7 @@ class GoogleAuthHandler(BaseHandler, GoogleOAuth2Mixin):
             try:
                 details = client.verify_id_token(
                     data['access_token'],
-                    config.GOOGLE_OAUTH2_CLIENT_ID
+                    config.GOOGLE_OAUTH2_DEVICE_CLIENT_ID
                 )
                 user = handle_user_authentication(
                     self.dbsession, details, user_type
