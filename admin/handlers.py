@@ -215,6 +215,7 @@ class GoogleAuthHandler(BaseHandler, GoogleOAuth2Mixin):
             user = yield self.get_authenticated_user(
                 redirect_uri=self.REDIRECT_URL,
                 code=self.get_argument('code'))
+
             try:
                 details = client.verify_id_token(
                     user['id_token'],
@@ -253,29 +254,34 @@ class GoogleAuthHandler(BaseHandler, GoogleOAuth2Mixin):
                 response_type='code',
                 extra_params={'approval_prompt': 'auto'})
 
-    @handle_exceptions
+    @coroutine
     def post(self):
         data = json.loads(self.request.body)
         user_type = self.get_argument('user_type')
         if 'access_token' in data:
             try:
-                details = client.verify_id_token(
-                    data['access_token'],
-                    config.GOOGLE_OAUTH2_DEVICE_CLIENT_ID
+                user = yield self.get_authenticated_user(
+                    redirect_uri=self.REDIRECT_URL,
+                    code=self.get_argument('code')
                 )
-                user = handle_user_authentication(
-                    self.dbsession, details, user_type
-                )
+                print user
+                #details = client.verify_id_token(
+                #    data['access_token'],
+                #    config.GOOGLE_OAUTH2_DEVICE_CLIENT_ID
+                #)
+                #user = handle_user_authentication(
+                #    self.dbsession, details, user_type
+                #)
 
-                self.session['user_type'] = user_type
-                if user_type == 'admin':
-                    self.session['buid'] = user.id
-                    self.session['admin'] = "true"
-                elif user_type in ('service_provider', 'service_user'):
-                    self.session['buid'] = user.user_id
-                    self.session['uid'] = user.id
+                #self.session['user_type'] = user_type
+                #if user_type == 'admin':
+                #    self.session['buid'] = user.id
+                #    self.session['admin'] = "true"
+                #elif user_type in ('service_provider', 'service_user'):
+                #    self.session['buid'] = user.user_id
+                #    self.session['uid'] = user.id
 
-                self.send_model_response(user)
+                #self.send_model_response(user)
             except crypt.AppIdentityError:
                 self.set_status(403)
         else:
