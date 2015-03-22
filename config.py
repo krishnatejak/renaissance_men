@@ -43,7 +43,7 @@ GOOGLE_OAUTH2_CLIENT_ID = '388912374776-ag2qu3vvvumlim94tpkqs3e6jn4munmg.apps.go
 GOOGLE_OAUTH2_DEVICE_CLIENT_ID = '388912374776-4shaubvgqe5om4c7r4c9ubi7v1cm1m4m.apps.googleusercontent.com'
 
 # Auth redirect urls
-GOOGLE_OAUTH_REDIRECT = 'http://localhost:8888/api/auth/google/'
+GOOGLE_OAUTH_REDIRECT = 'https://sevame.in/api/auth/google/'
 
 #Google API Key
 GOOGLE_GCM_API_KEY = 'AIzaSyBs0_M1TNHMMkIVv6k4-kcGJsrRYsUHm5Y'
