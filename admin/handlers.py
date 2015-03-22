@@ -254,34 +254,30 @@ class GoogleAuthHandler(BaseHandler, GoogleOAuth2Mixin):
                 response_type='code',
                 extra_params={'approval_prompt': 'auto'})
 
-    @coroutine
+    @handle_exceptions
     def post(self):
         data = json.loads(self.request.body)
         user_type = self.get_argument('user_type')
         if 'access_token' in data:
             try:
-                user = yield self.get_authenticated_user(
-                    redirect_uri=self.REDIRECT_URL,
-                    code=data['access_token']
+                details = client.verify_id_token(
+                    data['access_token'],
+                    config.GOOGLE_OAUTH2_CLIENT_ID
                 )
-                print user
-                #details = client.verify_id_token(
-                #    data['access_token'],
-                #    config.GOOGLE_OAUTH2_DEVICE_CLIENT_ID
-                #)
-                #user = handle_user_authentication(
-                #    self.dbsession, details, user_type
-                #)
+                print details
+                user = handle_user_authentication(
+                    self.dbsession, details, user_type
+                )
 
-                #self.session['user_type'] = user_type
-                #if user_type == 'admin':
-                #    self.session['buid'] = user.id
-                #    self.session['admin'] = "true"
-                #elif user_type in ('service_provider', 'service_user'):
-                #    self.session['buid'] = user.user_id
-                #    self.session['uid'] = user.id
+                self.session['user_type'] = user_type
+                if user_type == 'admin':
+                    self.session['buid'] = user.id
+                    self.session['admin'] = "true"
+                elif user_type in ('service_provider', 'service_user'):
+                    self.session['buid'] = user.user_id
+                    self.session['uid'] = user.id
 
-                #self.send_model_response(user)
+                self.send_model_response(user)
             except crypt.AppIdentityError:
                 self.set_status(403)
         else:
