@@ -262,7 +262,7 @@ class GoogleAuthHandler(BaseHandler, GoogleOAuth2Mixin):
             try:
                 user = yield self.get_authenticated_user(
                     redirect_uri=self.REDIRECT_URL,
-                    code=self.get_argument('code')
+                    code=data['access_token']
                 )
                 print user
                 #details = client.verify_id_token(
