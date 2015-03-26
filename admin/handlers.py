@@ -316,7 +316,6 @@ class OrderHandler(BaseHandler):
         )
         self.send_model_response(order)
 
-    @su
     @handle_exceptions
     def get(self, id=None):
         orders = get_order(

@@ -34,21 +34,27 @@ class TornadoJSONEncoder(json.JSONEncoder):
     def default(self, o):
         # See "Date Time String Format" in the ECMA-262 specification.
         if isinstance(o, datetime.datetime):
+            '''
             r = o.isoformat()
             if o.microsecond:
                 r = r[:23] + r[26:]
             if r.endswith('+00:00'):
                 r = r[:-6] + 'Z'
-            return r
+            '''
+            return o.strftime('%s')
         elif isinstance(o, datetime.date):
-            return o.isoformat()
+            #return o.isoformat()
+            return o.strftime('%s')
         elif isinstance(o, datetime.time):
+            '''
             if is_aware(o):
                 raise ValueError("JSON can't represent timezone-aware times.")
             r = o.isoformat()
             if o.microsecond:
                 r = r[:12]
             return r
+            '''
+            return o.strftime('%s')
         elif isinstance(o, decimal.Decimal):
             return str(o)
         else:
@@ -132,6 +138,10 @@ def get_json_datetime(date_time=None):
         return now.strftime(JSON_DATETIME_FORMAT)
     return date_time.strftime(JSON_DATETIME_FORMAT)
 
+def parse_datetime(epoch_time):
+    #date_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(float(epoch_time)))
+    date_time = datetime.datetime.fromtimestamp(float(epoch_time))
+    return date_time
 
 # authorization methods
 def sp(function):
@@ -162,7 +172,7 @@ def su(function):
                 raise HTTPError(403)
         if self.request.method in ("GET", "PUT", "DELETE"):
             spid = kwargs['id'] if 'id' in kwargs else args[0]
-
+            print self.session['uid']
             if self.session['uid'] != spid:
                 raise HTTPError(403)
         if self.request.method == "POST":

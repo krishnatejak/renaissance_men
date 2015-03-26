@@ -3,7 +3,7 @@ from datetime import datetime
 from admin.models import Job
 from utils import update_model_from_dict, transaction
 from admin.service.user import create_user, get_user
-from utils import generate_secret, parse_json_datetime
+from utils import generate_secret, parse_datetime
 from exc import AppException
 from admin import tasks
 import config
@@ -15,7 +15,7 @@ def create_job(dbsession, data):
     job = Job()
     data['service_id'] = data.pop('service_id')
     data['service_provider_id'] = data.pop('service_provider_id')
-    data['appointment_time'] = parse_json_datetime(data['appointment_time'])
+    data['appointment_time'] = parse_datetime(data['appointment_time'])
 
     user_id = data.pop('user_id', 0)
     if user_id:

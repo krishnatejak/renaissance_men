@@ -3,7 +3,7 @@ from admin import tasks
 import config
 from search.service.slots import assign_slot_to_sp
 from exc import AppException
-from utils import transaction, update_model_from_dict, parse_json_datetime
+from utils import transaction, update_model_from_dict, parse_datetime
 
 __all__ = ['create_order', 'get_order', 'get_status_orders', 'update_order']
 
@@ -15,7 +15,7 @@ def create_order(dbsession, redis, data, uid):
         redis, data['service'], data['scheduled']
     )
     data['service_provider_id'] = service_provider_id
-    data['scheduled'] = parse_json_datetime(data['scheduled'])
+    data['scheduled'] = parse_datetime(data['scheduled'])
 
     update_model_from_dict(order, data)
     order.service_user_id = uid
