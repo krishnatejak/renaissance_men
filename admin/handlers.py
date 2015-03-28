@@ -19,6 +19,7 @@ from utils import model_to_dict, TornadoJSONEncoder
 from utils import sp, su
 from exc import AppException, handle_exceptions
 
+
 import config
 
 
@@ -316,7 +317,6 @@ class OrderHandler(BaseHandler):
         )
         self.send_model_response(order)
 
-    @su
     @handle_exceptions
     def get(self, id=None):
         orders = get_order(
