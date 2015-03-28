@@ -3,7 +3,7 @@ import datetime
 import pytz
 
 import constants
-from utils import parse_json_datetime
+from utils import parse_datetime
 from exc import AssignmentException
 
 def get_available_slots(redis, service):
@@ -70,7 +70,7 @@ def get_datetime_for_slot(slot, base_datetime):
 
 def block_slot(redis, service, slot_datetime):
     """blocks given slot for service, return True/False"""
-    slot_datetime = parse_json_datetime(slot_datetime)
+    slot_datetime = parse_datetime(slot_datetime)
     md = slot_datetime.strftime('%m%d')
     slot = (slot_datetime.hour * 60 + slot_datetime.minute)/5
     count = redis.hmget("schedule:block", "{0}:{1}:{2}".format(service, md, slot))
@@ -79,8 +79,7 @@ def block_slot(redis, service, slot_datetime):
 def assign_slot_to_sp(redis, service, slot_datetime, block=False):
     """assigns slot to sp for service, returns sp id if assigned,
      raises AssignmentException otherwise"""
-    slot_datetime = parse_json_datetime(slot_datetime)
-
+    slot_datetime = parse_datetime(slot_datetime)
     now = datetime.datetime.now()
     if slot_datetime < now + datetime.timedelta(hours=2):
         raise AssignmentException('Cannot assign slot in past')
