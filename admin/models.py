@@ -56,6 +56,7 @@ class ServiceProviderSkill(db.Base):
         exclude = ['id', 'trash']
         fk = []
 
+
 class ServiceProvider(db.Base):
     __tablename__ = 'service_provider'
 
@@ -81,6 +82,7 @@ class ServiceProvider(db.Base):
         exclude = ['trash', 'user_id']
         fk = []
 
+
 class ServiceProviderService(db.Base):
     __tablename__ = 'service_provider_service'
 
@@ -88,6 +90,7 @@ class ServiceProviderService(db.Base):
     service_id = Column("service_id", ForeignKey('service.id'))
     service_provider_id = Column('service_provider_id', Integer, ForeignKey('service_provider.id'))
     trash = Column('trash', Boolean, default=False)
+
 
 class ServiceUser(db.Base):
     __tablename__ = 'service_user'
@@ -103,6 +106,7 @@ class ServiceUser(db.Base):
         follow_exclude = ['user_id']
         exclude = []
         fk = []
+
 
 class BaseUser(db.Base):
     __tablename__ = 'base_user'
@@ -206,3 +210,13 @@ class MissedOrders(db.Base):
         follow_exclude = []
         exclude = ['id']
         fk = []
+
+
+class OrderRating(db.Base):
+    __tablename__ = 'order_rating'
+
+    id = Column(Integer, primary_key=True)
+    sp_rating = Column(Integer, default=-1)
+    su_rating = Column(Integer, default=-1)
+    order_id = Column("order_id", ForeignKey('orders.id'))
+

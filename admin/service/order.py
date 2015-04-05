@@ -1,11 +1,12 @@
-from admin.models import Orders, MissedOrders
+from admin.models import Orders, MissedOrders, OrderRating
 from admin import tasks
 import config
 from search.service.slots import assign_slot_to_sp
 from exc import AppException
 from utils import transaction, update_model_from_dict, parse_datetime
 
-__all__ = ['create_order', 'get_order', 'get_status_orders', 'update_order', 'save_missed_records']
+__all__ = ['create_order', 'get_order', 'get_status_orders', 'update_order',
+           'save_missed_records', 'save_rating']
 
 
 @transaction
@@ -20,6 +21,11 @@ def create_order(dbsession, redis, data, uid):
     update_model_from_dict(order, data)
     order.service_user_id = uid
     dbsession.add(order)
+
+    order_rating = OrderRating()
+    order_rating.order_id = order.id
+    dbsession.add(order_rating)
+
     dbsession.commit()
     tasks.post_order_creation.apply_async(
         (service_provider_id, data['scheduled'], order.id),
@@ -82,3 +88,54 @@ def save_missed_records(dbsession, location):
     dbsession.add(missed_order)
     dbsession.commit()
     return missed_order
+
+
+@transaction
+def save_rating(dbsession, order_id, **kwargs):
+    """expects kwargs in {
+        "sp_id": service_provider id,
+        "sp_rating": service provider rating
+        "su_id": service_user id,
+        "su_rating": service user rating
+    }"""
+
+    order = dbsession.query(Orders).filter(
+        Orders.id == order_id
+    ).one()
+
+    order_rating = dbsession.query(OrderRating).filter(
+        OrderRating.order_id == order_id
+    ).one()
+
+    if all([
+        kwargs.get('sp_id'),
+        kwargs.get('sp_rating')
+    ]):
+        sp_id = int(kwargs['sp_id'])
+        if order.service_provider_id != sp_id:
+            raise AppException('Cannot rate order, sp not assigned to this order')
+        sp_rating = int(kwargs['sp_rating'])
+        if not (0 <= sp_rating <= 5):
+            raise AppException('rating value should be between 0 and 5')
+        order_rating.sp_rating = sp_rating
+        dbsession.add(order_rating)
+    elif all([
+        kwargs.get('su_id'),
+        kwargs.get('su_rating')
+    ]):
+        su_id = kwargs['su_id']
+        if order.service_user_id != su_id:
+            raise AppException('Cannot rate order, su not assigned to this order')
+        su_rating = int(kwargs['su_rating'])
+        if not (0 <= su_rating <= 5):
+            raise AppException('rating value should be between 0 and 5')
+        order_rating.su_rating = su_rating
+        dbsession.add(order_rating)
+
+    else:
+        raise AppException('Cannot rate order without sp/su')
+    dbsession.commit()
+
+
+
+

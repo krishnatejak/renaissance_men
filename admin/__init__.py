@@ -29,6 +29,7 @@ admin_application = Application(
         (r'/api/missedorder/?', MissedOrderHandler),
         (r'/api/order/([\d]+)/serviceprovider/', OrderHandler),
         (r'/api/order/([\w]+)/', OrderStatusHandler),
+        (r'/api/order/([\d]+)/rating/(\d)', OrderRatingHandler),
         (r'/api/user/([\d]+)/verify/', UserVerifyHandler),
         (r'/api/user/?', UserHandler),
         (r'/api/signup/?', SignupHandler),

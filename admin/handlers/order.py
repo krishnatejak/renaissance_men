@@ -1,11 +1,12 @@
 from tornado.web import authenticated
-
+import json
 from admin.service.order import *
 from admin.handlers.common import BaseHandler
 from exc import handle_exceptions
-from utils import su
+from utils import su, sp
 
-__all__ = ['OrderHandler', 'OrderStatusHandler', 'MissedOrderHandler']
+__all__ = ['OrderHandler', 'OrderStatusHandler', 'MissedOrderHandler',
+           'OrderRatingHandler']
 
 class OrderHandler(BaseHandler):
     resource_name = 'order'
@@ -52,14 +53,32 @@ class OrderStatusHandler(BaseHandler):
         )
         self.send_model_response(orders)
 
+
 class MissedOrderHandler(BaseHandler):
     resource_name = 'order'
     create_required = {'location'}
 
-    @su
     @handle_exceptions
     def post(self):
         data = self.check_input('create')
         missed_order = save_missed_records(self.dbsession, data['location'])
         self.send_model_response(missed_order)
+
+
+class OrderRatingHandler(BaseHandler):
+
+    @authenticated
+    def post(self, order_id, rating):
+        if self.session['user_type'] == 'service_provider':
+            kwargs = {
+                'sp_id': self.session['uid'],
+                'sp_rating': rating
+            }
+            save_rating(self.dbsession, order_id, **kwargs)
+        elif self.session['user_type'] == 'service_user':
+            kwargs = {
+                'su_id': self.session['uid'],
+                'su_rating': rating
+            }
+            save_rating(self.dbsession, order_id, **kwargs)
 
