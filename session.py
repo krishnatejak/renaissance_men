@@ -3,7 +3,6 @@ from uuid import uuid4
 import db
 import config
 from utils import get_json_datetime
-import jwt
 
 
 #TODO optimize session access
