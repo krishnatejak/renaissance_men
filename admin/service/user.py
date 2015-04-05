@@ -18,6 +18,9 @@ def create_user(dbsession, data):
     user = BaseUser()
     if user_exists(dbsession, data['email']):
         raise AppException('User already exists')
+    if 'phone_number' in data:
+        if phone_number_exists(dbsession, data['phone_number']):
+            raise AppException('Phone number exists')
     update_model_from_dict(user, data)
     dbsession.add(user)
     dbsession.commit()
@@ -35,6 +38,9 @@ def update_user(dbsession, uid, data):
         BaseUser.id == uid
     ).one()
     phone_number_changed = False
+    if 'phone_number' in data:
+        if phone_number_exists(dbsession, data['phone_number']):
+            raise AppException('Phone number exists')
     if 'phone_number' in data and data['phone_number'] != user.phone_number:
         phone_number_changed = True
 
@@ -129,3 +135,12 @@ def make_admin(dbsession, email):
     user.admin = True
     dbsession.add(user)
     dbsession.commit()
+
+
+def phone_number_exists(dbsession, phone_number):
+    """returns true if phone number exists, false otherwise"""
+    count = dbsession.query(BaseUser.phone_number).filter(
+        BaseUser.phone_number == phone_number
+    ).count()
+
+    return count > 0
