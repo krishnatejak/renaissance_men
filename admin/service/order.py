@@ -1,11 +1,11 @@
-from admin.models import Orders
+from admin.models import Orders, MissedOrders
 from admin import tasks
 import config
 from search.service.slots import assign_slot_to_sp
 from exc import AppException
 from utils import transaction, update_model_from_dict, parse_datetime
 
-__all__ = ['create_order', 'get_order', 'get_status_orders', 'update_order']
+__all__ = ['create_order', 'get_order', 'get_status_orders', 'update_order', 'save_missed_records']
 
 
 @transaction
@@ -75,3 +75,10 @@ def get_status_orders(dbsession, status, user_type='service_user', uid=None):
     return orders
 
 
+@transaction
+def save_missed_records(dbsession, location):
+    missed_order = MissedOrders()
+    missed_order.location = location
+    dbsession.add(missed_order)
+    dbsession.commit()
+    return missed_order

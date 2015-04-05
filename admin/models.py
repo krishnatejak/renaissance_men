@@ -193,3 +193,16 @@ class Orders(db.Base):
         follow_exclude = []
         exclude = []
         fk = []
+
+class MissedOrders(db.Base):
+    __tablename__ = 'missedorders'
+
+    id = Column(Integer, primary_key=True)
+    location = Column("location", ARRAY(Float, dimensions=1))
+    created = Column("created", DateTime(timezone=True), default=datetime.utcnow())
+
+    class Meta(object):
+        follow = []
+        follow_exclude = []
+        exclude = ['id']
+        fk = []

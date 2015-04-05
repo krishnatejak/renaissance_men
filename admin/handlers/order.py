@@ -5,7 +5,7 @@ from admin.handlers.common import BaseHandler
 from exc import handle_exceptions
 from utils import su
 
-__all__ = ['OrderHandler', 'OrderStatusHandler']
+__all__ = ['OrderHandler', 'OrderStatusHandler', 'MissedOrderHandler']
 
 class OrderHandler(BaseHandler):
     resource_name = 'order'
@@ -51,3 +51,15 @@ class OrderStatusHandler(BaseHandler):
             self.session['uid']
         )
         self.send_model_response(orders)
+
+class MissedOrderHandler(BaseHandler):
+    resource_name = 'order'
+    create_required = {'location'}
+
+    @su
+    @handle_exceptions
+    def post(self):
+        data = self.check_input('create')
+        missed_order = save_missed_records(self.dbsession, data['location'])
+        self.send_model_response(missed_order)
+
