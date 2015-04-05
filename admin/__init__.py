@@ -1,13 +1,19 @@
 from tornado.web import Application
 
-from admin.handlers import *
 import config
+from admin.handlers.auth import *
+from admin.handlers.job import *
+from admin.handlers.serviceprovider import *
+from admin.handlers.order import *
+from admin.handlers.user import *
+from admin.handlers.common import *
+from admin.handlers.signup import *
 
 
 admin_application = Application(
     [
         (r'/api/serviceprovider/(?P<id>[\d]+)?/?', ServiceProviderHandler),
-        #(r'/api/serviceprovider/([\d]+)/verify/?', ServiceProviderVerifyHandler),
+        # (r'/api/serviceprovider/([\d]+)/verify/?', ServiceProviderVerifyHandler),
         (r'/api/serviceprovider/([\d]+)/job/?', ServiceProviderJobHandler),
         #(r'/api/serviceprovider/([\d]+)/gcm/?', ServiceProviderGCMHandler),
         #(r'/api/service/?', ServiceHandler),
@@ -24,7 +30,7 @@ admin_application = Application(
         (r'/api/order/([\w]+)/', OrderStatusHandler),
         (r'/api/user/([\d]+)/verify/', UserVerifyHandler),
         (r'/api/user/?', UserHandler),
-        (r'/api/signup/?', SignupEmail),
+        (r'/api/signup/?', SignupHandler),
         (r'/api/close', CloseHandler)
     ],
     google_oauth={
