@@ -1,28 +1,41 @@
 import json
 
 from exc import handle_exceptions
-from utils import sp, model_to_dict, TornadoJSONEncoder
+from utils import model_to_dict, TornadoJSONEncoder
+from utils import allow
 from admin.handlers.common import BaseHandler
 from admin.service.serviceprovider import *
+from admin.service.order import get_sp_orders_by_status
 
-__all__ = ['ServiceProviderHandler', 'ServiceProviderJobHandler']
+__all__ = ['ServiceProviderHandler', 'ServiceProviderJobHandler',
+           'ServiceProviderOrdersHandler']
+
 
 class ServiceProviderHandler(BaseHandler):
     resource_name = 'serviceprovider'
-    create_required = {'name', 'phone_number'}
-    update_ignored = {'service'}
+    create_required = {'email', 'phone_number'}
+    update_ignored = {'service', 'id'}
 
-    @sp
     @handle_exceptions
-    def put(self, id=None):
+    @allow('service_provider', base=True)
+    def put(self, *args, **kwargs):
         data = self.check_input('update')
-        service_provider = update_service_provider(self.dbsession, id, data)
+        service_provider = update_service_provider(
+            self.dbsession, kwargs['pk'], data
+        )
         self.send_model_response(service_provider)
 
-    @sp
     @handle_exceptions
-    def get(self, id=None):
-        service_provider = get_service_provider(self.dbsession, id)
+    @allow('service_provider', base=True)
+    def get(self, *args, **kwargs):
+        service_provider = get_service_provider(self.dbsession, kwargs['pk'])
+        self.send_model_response(service_provider)
+
+    @handle_exceptions
+    @allow('admin')
+    def post(self, *args, **kwargs):
+        data = self.check_input('create')
+        service_provider = create_service_provider(self.dbsession, data)
         self.send_model_response(service_provider)
 
     def send_model_response(self, instance_or_query):
@@ -47,8 +60,20 @@ class ServiceProviderHandler(BaseHandler):
 
 
 class ServiceProviderJobHandler(BaseHandler):
+
     @handle_exceptions
-    def get(self, spid):
-        status = self.get_argument("status", "").split(",")
-        jobs = fetch_jobs_by_status(self.dbsession, spid, status)
+    @allow('service_provider', base=True)
+    def get(self, *args, **kwargs):
+        status = self.get_argument("status", "")
+        jobs = fetch_jobs_by_status(self.dbsession, kwargs['pk'], status)
         self.send_model_response(jobs)
+
+
+class ServiceProviderOrdersHandler(BaseHandler):
+
+    @handle_exceptions
+    @allow('service_provider', base=True)
+    def get(self, *args, **kwargs):
+        status = self.get_argument("status", "")
+        orders = get_sp_orders_by_status(self.dbsession, kwargs['pk'], status)
+        self.send_model_response(orders)

@@ -1,54 +1,53 @@
-from tornado.web import authenticated
-import json
 from admin.service.order import *
 from admin.handlers.common import BaseHandler
 from exc import handle_exceptions
-from utils import su, sp
+from utils import allow
 
-__all__ = ['OrderHandler', 'OrderStatusHandler', 'MissedOrderHandler',
-           'OrderRatingHandler']
+__all__ = ['OrderHandler', 'SuOrderStatusHandler', 'MissedOrderHandler',
+           'OrderRatingHandler', 'UpdateOrderStatusHandler',
+           'AssignOrderHandler']
+
 
 class OrderHandler(BaseHandler):
     resource_name = 'order'
     create_required = {'service', 'request', 'scheduled', 'address'}
     update_ignored = {'id', 'status', 'completed', 'created'}
 
-    @su
     @handle_exceptions
-    def post(self, id=None):
+    @allow('service_user')
+    def post(self, *args, **kwargs):
         data = self.check_input('create')
         order = create_order(
-            self.dbsession, self.redisdb, data, self.session['uid']
+            self.dbsession, self.redisdb, data, kwargs['uid']
         )
         self.send_model_response(order)
 
     @handle_exceptions
-    def get(self, id=None):
+    @allow('service_user', allow_list=True)
+    def get(self, *args, **kwargs):
         orders = get_order(
             self.dbsession,
-            oid=id,
-            user_type=self.session['user_type'],
-            user_id=self.session['uid']
+            kwargs['uid'],
+            oid=kwargs['pk']
         )
         self.send_model_response(orders)
 
-    @su
     @handle_exceptions
-    def put(self, id=None):
+    @allow('service_user', 'admin')
+    def put(self, *args, **kwargs):
         data = self.check_input('update')
-        order = update_order(self.dbsession, id, data)
+        order = update_order(self.dbsession, kwargs['pk'], data)
         self.send_model_response(order)
 
 
-class OrderStatusHandler(BaseHandler):
+class SuOrderStatusHandler(BaseHandler):
     resource_name = 'order'
 
-    @authenticated
-    def get(self, status):
-        orders = get_status_orders(
+    @allow('service_user')
+    def get(self, *args, **kwargs):
+        orders = get_su_orders_by_status(
             self.dbsession,
-            status,
-            self.session['user_type'],
+            kwargs['status'],
             self.session['uid']
         )
         self.send_model_response(orders)
@@ -66,19 +65,41 @@ class MissedOrderHandler(BaseHandler):
 
 
 class OrderRatingHandler(BaseHandler):
-
-    @authenticated
-    def post(self, order_id, rating):
-        if self.session['user_type'] == 'service_provider':
-            kwargs = {
-                'sp_id': self.session['uid'],
-                'sp_rating': rating
+    @allow('service_user', 'service_provider')
+    def post(self, *args, **kwargs):
+        if kwargs['user_type'] == 'service_provider':
+            data = {
+                'sp_id': kwargs['uid'],
+                'sp_rating': kwargs['rating']
             }
-            save_rating(self.dbsession, order_id, **kwargs)
-        elif self.session['user_type'] == 'service_user':
-            kwargs = {
-                'su_id': self.session['uid'],
-                'su_rating': rating
+            save_rating(self.dbsession, kwargs['pk'], **data)
+        elif kwargs['user_type'] == 'service_user':
+            data = {
+                'su_id': kwargs['uid'],
+                'su_rating': kwargs['rating']
             }
-            save_rating(self.dbsession, order_id, **kwargs)
+            save_rating(self.dbsession, kwargs['pk'], **data)
 
+
+class UpdateOrderStatusHandler(BaseHandler):
+
+    @handle_exceptions
+    @allow('admin', post_pk=True)
+    def post(self, *args, **kwargs):
+        order = update_order_status(
+            self.dbsession, kwargs['pk'], kwargs['status']
+        )
+        self.send_model_response(order)
+
+
+class AssignOrderHandler(BaseHandler):
+    create_required = {'phone_number'}
+
+    @handle_exceptions
+    @allow('admin', post_pk=True)
+    def post(self, *args, **kwargs):
+        data = self.check_input('create')
+        order = assign_order_to_phone_number(
+            self.dbsession, kwargs['pk'], data['phone_number']
+        )
+        self.send_model_response(order)

@@ -1,35 +1,38 @@
-from tornado.web import authenticated
-
 from admin.handlers.common import BaseHandler
 
 from admin.service.user import *
 from exc import AppException, handle_exceptions
+from utils import allow
 
 __all__ = ['UserHandler', 'UserVerifyHandler']
+
 
 class UserHandler(BaseHandler):
     resource_name = 'user'
     update_ignored = {'verified', 'id', 'admin', 'email'}
 
-    @authenticated
-    def get(self):
-        user = get_user(self.dbsession, self.session['buid'])
+    @handle_exceptions
+    @allow('service_provider', 'service_user', 'admin', base=True)
+    def get(self, *args, **kwargs):
+        print kwargs
+        user = get_user(self.dbsession, kwargs['buid'])
         self.send_model_response(user)
 
-    @authenticated
-    def put(self):
+    @handle_exceptions
+    @allow('service_provider', 'service_user', 'admin', base=True)
+    def put(self, *args, **kwargs):
         data = self.check_input('update')
-        user = update_user(self.dbsession, self.session['buid'], data)
+        user = update_user(self.dbsession, kwargs['buid'], data)
         self.send_model_response(user)
 
 
 class UserVerifyHandler(BaseHandler):
-    @authenticated
     @handle_exceptions
-    def post(self, uid):
+    @allow('service_provider', 'service_user', 'admin', base=True)
+    def post(self, *args, **kwargs):
         otp = self.get_argument('otp', None)
 
         if otp is not None:
-            verify_otp(self.dbsession, self.redisdb, uid, otp)
+            verify_otp(self.dbsession, self.redisdb, kwargs['buid'], otp)
         else:
             raise AppException('otp required to verify user')

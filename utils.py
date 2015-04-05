@@ -10,6 +10,8 @@ from functools import wraps
 
 import db
 
+from exc import AppException
+
 CHARACTER_POOL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890!@#$%^&*()_+=-'
 
 JSON_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
@@ -143,44 +145,57 @@ def parse_datetime(epoch_time):
     date_time = datetime.datetime.fromtimestamp(float(epoch_time))
     return date_time
 
+
 # authorization methods
-def sp(function):
-    @wraps(function)
-    def wrapper(self, *args, **kwargs):
-        if not self.current_user:
-            raise HTTPError(401)
-        if not self.session['user_type'] == 'service_provider':
-                raise HTTPError(403)
-        if self.request.method in ("GET", "PUT", "DELETE"):
-            spid = kwargs['id'] if 'id' in kwargs else args[0]
-            if self.session['uid'] != spid:
-                raise HTTPError(403)
-        if self.request.method == "POST":
-            if kwargs.get('id') or args:
-                raise HTTPError(403)
-        return function(self, *args, **kwargs)
-    return wrapper
+def allow(*user_types, **basekw):
+    """allow decorator usage:
+        @allow('admin') --> allows only admin users for non base resources
+        @allow('service_provider', 'admin') --> allows only service provider
+            and admin users for non base resources
+        @allow('service_provider', base=True) --> allows only service provider
+            user for base resources
+        @allow('service_provider', 'service_user', 'admin', base=True) --> allows
+            service provider, service user and admin user for baser resources
+    """
+    allowed_user_types = {'service_user', 'service_provider', 'admin'}
+    if not set(user_types) <= allowed_user_types:
+        raise AppException('only su/sp/admin allowed')
 
+    def validate(function):
+        @wraps(function)
+        def _wrapper(self, *args, **kwargs):
 
-def su(function):
-    @wraps(function)
-    @authenticated
-    def wrapper(self, *args, **kwargs):
-        if not self.current_user:
-            raise HTTPError(401)
-        if not self.session['user_type'] == 'service_user':
-                raise HTTPError(403)
-        if self.request.method in ("GET", "PUT", "DELETE"):
-            spid = kwargs['id'] if 'id' in kwargs else args[0]
-            print self.session['uid']
-            if self.session['uid'] != spid:
-                raise HTTPError(403)
-        if self.request.method == "POST":
-            if kwargs.get('id') or args:
-                raise HTTPError(403)
-        return function(self, *args, **kwargs)
-    return wrapper
+            if not self.current_user:
+                raise HTTPError(401, reason='not logged in')
+            user_type = self.session['user_type']
+            buid = self.session['buid']
+            uid = self.session['uid']
+            kwargs['user_type'] = user_type
+            kwargs['buid'] = buid
+            kwargs['uid'] = uid
+            base = basekw.get('base', False)
+            allow_list = basekw.get('allow_list', False)
+            post_pk = basekw.get('post_pk', False)
+            if user_type not in user_types:
+                raise HTTPError(403, reason='user not allowed to access resource')
 
+            if self.request.method == 'GET':
+                if base:
+                    kwargs['pk'] = uid
+                if not allow_list and not kwargs['pk']:
+                    raise HTTPError(403, reason='cannot access resource without pk')
 
-def admin(function):
-    pass
+            elif self.request.method in ("PUT", "DELETE"):
+                if base:
+                    kwargs['pk'] = uid
+                if not kwargs['pk']:
+                    raise HTTPError(403, reason='cannot update resource without pk')
+
+            elif self.request.method == 'POST':
+                if kwargs['pk'] and not post_pk:
+                    raise HTTPError(403, reason='cannot post with pk')
+
+            return function(self, *args, **kwargs)
+        return _wrapper
+
+    return validate

@@ -1,17 +1,31 @@
 
-from admin.models import ServiceProvider, ServiceSkill, Job, ServiceProviderService, ServiceProviderSkill
+from admin.models import *
 from admin import tasks
 from admin.service.service import *
+from admin.service.user import create_user
 from utils import transaction, update_model_from_dict
 from exc import AppException
 import config
 
 
 __all__ = ['update_service_provider', 'get_service_provider',
-           'delete_service_provider', 'initiate_verification',
+           'delete_service_provider', 'create_service_provider',
            'get_service_provider_skills',
-           'fetch_jobs_by_status']
+           'fetch_jobs_by_status', 'get_sp_for_phone_number']
 
+@transaction
+def create_service_provider(dbsession, data):
+    user_data = {
+        'email': data['email'],
+        'phone_number': data['phone_number']
+    }
+    user = create_user(dbsession, user_data)
+    service_provider = ServiceProvider()
+    service_provider.user_id = user.id
+    update_model_from_dict(service_provider, data)
+    dbsession.add(service_provider)
+    dbsession.commit()
+    return service_provider
 
 @transaction
 def update_service_provider(dbsession, provider_id, data):
@@ -71,36 +85,6 @@ def delete_service_provider(dbsession, provider_id):
         queue=config.SERVICE_PROVIDER_QUEUE
     )
     return True
-
-@transaction
-def initiate_verification(dbsession, spid, phone_number):
-    service_provider = dbsession.query(ServiceProvider).filter(
-        ServiceProvider.id == spid,
-        ServiceProvider.trash == False
-    ).one()
-
-    service_provider.phone_number = phone_number
-    dbsession.add(service_provider)
-    dbsession.commit()
-
-    tasks.verify_user_phone.apply_async(
-        (service_provider.id,),
-        queue=config.SERVICE_PROVIDER_QUEUE
-    )
-
-'''
-def update_skills(dbsession, spid, sid, update_skills):
-    skill_names = [skill['name'] for skill in update_skills]
-    skills = dbsession.query(ServiceSkill).filter(
-        ServiceSkill.name.in_(skill_names),
-        ServiceSkill.service_id == sid
-    ).all()
-    service_provider = dbsession.query(ServiceProvider).filter(ServiceProvider.id == spid).one()
-    service_provider.skills = update_skills
-    dbsession.add(service_provider)
-
-    dbsession.commit()
-'''
 
 
 def update_skills(dbsession, spid, sid, skills):
@@ -181,7 +165,23 @@ def get_service_provider_skills(dbsession, spid):
                 }]
     return service_skills
 
+
 def fetch_jobs_by_status(dbsession, spid, status):
-    return dbsession.query(Job).filter(
-            Job.service_provider_id == spid,
-            Job.status.in_(status))
+    status = status.strip()
+    jobs = dbsession.query(Job).filter(
+        Job.service_provider_id == spid,
+    )
+    if status:
+        status = status.split(',')
+        jobs = jobs.filter(
+            Job.status.in_(status)
+        )
+    return jobs
+
+
+def get_sp_for_phone_number(dbsession, phone_number):
+    service_provider = dbsession.query(ServiceProvider).filter(
+        BaseUser.phone_number == phone_number,
+        ServiceProvider.trash == False
+    ).one()
+    return service_provider

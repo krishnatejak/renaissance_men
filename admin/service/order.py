@@ -2,11 +2,14 @@ from admin.models import Orders, MissedOrders, OrderRating
 from admin import tasks
 import config
 from search.service.slots import assign_slot_to_sp
+from admin.service.serviceprovider import get_sp_for_phone_number
+
 from exc import AppException
 from utils import transaction, update_model_from_dict, parse_datetime
 
-__all__ = ['create_order', 'get_order', 'get_status_orders', 'update_order',
-           'save_missed_records', 'save_rating']
+__all__ = ['create_order', 'get_order', 'get_su_orders_by_status', 'update_order',
+           'save_missed_records', 'save_rating', 'update_order_status',
+           'assign_order_to_phone_number']
 
 
 @transaction
@@ -34,23 +37,16 @@ def create_order(dbsession, redis, data, uid):
     return order
 
 
-def get_order(dbsession, oid=None, user_type='service_user', user_id=None):
+def get_order(dbsession, user_id, oid=None):
     if oid:
         orders = dbsession.query(Orders).filter(
-            Orders.id == oid
+            Orders.id == oid,
+            Orders.service_user_id == user_id
         ).one()
-    elif user_type == 'service_user':
+    else:
         orders = dbsession.query(Orders).filter(
             Orders.service_user_id == user_id
-        )
-    elif user_type == 'service_provider':
-        orders = dbsession.query(Orders).filter(
-            Orders.service_provider_id == user_id
-        )
-    elif user_type == 'admin':
-        orders = dbsession.query(Orders).all()
-    else:
-        raise AppException('user_type/order id required')
+        ).order_by(Orders.created.desc())
     return orders
 
 
@@ -65,20 +61,18 @@ def update_order(dbsession, oid, data):
     return order
 
 
-def get_status_orders(dbsession, status, user_type='service_user', uid=None):
-    orders = dbsession.query(Orders).filter(
-        Orders.status == status
-    )
-    if user_type == 'service_user':
-        orders = orders.filter(
-            Orders.service_user_id == uid
+def get_su_orders_by_status(dbsession, status, user_id):
+    if status == 'all':
+        orders = dbsession.query(Orders).filter(
+            Orders.service_user_id == user_id,
         )
-    elif user_type == 'service_provider':
-        orders = orders.filter(
-            Orders.service_provider_id == uid
+    else:
+        orders = dbsession.query(Orders).filter(
+            Orders.service_user_id == user_id,
+            Orders.status == status
         )
 
-    return orders
+    return orders.order_by(Orders.created.desc())
 
 
 @transaction
@@ -137,5 +131,38 @@ def save_rating(dbsession, order_id, **kwargs):
     dbsession.commit()
 
 
+def get_sp_orders_by_status(dbsession, spid, status):
+    orders = dbsession.query(Orders).filter(
+        Orders.service_provider_id == spid
+    )
+    if status:
+        status = status.strip()
+        status = status.split(',')
+        orders = dbsession.filter(
+            Orders.status.in_(status)
+        )
+    return orders
 
 
+def update_order_status(dbsession, oid, status):
+    if status not in Orders.status_types:
+        raise AppException('invalid status')
+    order = dbsession.query(Orders).filter(
+        Orders.id == oid
+    ).one()
+
+    order.status = status
+    dbsession.add(order)
+    dbsession.commit()
+    return order
+
+
+def assign_order_to_phone_number(dbsession, oid, phone_number):
+    service_provider = get_sp_for_phone_number(dbsession, phone_number)
+    order = dbsession.query(Orders).filter(
+        Orders.id == oid
+    )
+    order.service_provider_id = service_provider.id
+    dbsession.add(order)
+    dbsession.commit()
+    return order

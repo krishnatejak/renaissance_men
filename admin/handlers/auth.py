@@ -46,6 +46,7 @@ class GoogleAuthHandler(BaseHandler, GoogleOAuth2Mixin):
                 self.session['user_type'] = user_type
                 if user_type == 'admin':
                     self.session['buid'] = user.id
+                    self.session['uid'] = user.id
                     self.session['admin'] = "true"
                 elif user_type in ('service_provider', 'service_user'):
                     self.session['buid'] = user.user_id

@@ -1,7 +1,9 @@
-from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
-from tornado.web import HTTPError
 import traceback
 import logging
+from functools import wraps
+
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+from tornado.web import HTTPError
 
 
 class AppException(Exception):
@@ -11,32 +13,41 @@ class AppException(Exception):
 class AssignmentException(Exception):
     pass
 
+
 def handle_exceptions(function):
-    def _wrapper(instance, *args, **kwargs):
+    """usage: should decorate verbs on handlers"""
+
+    @wraps(function)
+    def _wrapper(self, *args, **kwargs):
         try:
-            return function(instance, *args, **kwargs)
+            return function(self, *args, **kwargs)
         except (AppException, AssignmentException) as ae:
             logging.warn(traceback.format_exc())
-            instance.set_status(400)
-            instance.write({
+            self.set_status(400)
+            self.write({
                 'error': str(ae)
             })
-            instance.flush()
+            self.flush()
         except (NoResultFound, MultipleResultsFound):
             logging.warn(traceback.format_exc())
-            instance.set_status(404)
-            instance.write({
+            self.set_status(404)
+            self.write({
                 'error': 'No results found'
             })
-            instance.flush()
+            self.flush()
         except HTTPError as he:
             logging.warn(traceback.format_exc())
-            raise he
+            self.set_status(he.status_code)
+            self.write({
+                'error': he.reason
+            })
+            self.flush()
         except Exception as e:
             logging.warn(traceback.format_exc())
-            instance.set_status(500)
-            instance.write({
+            self.set_status(500)
+            self.write({
                 'error': str(e)
             })
-            instance.flush()
+            self.flush()
+
     return _wrapper
