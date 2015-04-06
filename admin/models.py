@@ -71,8 +71,8 @@ class ServiceProvider(db.Base):
     orders = relationship('Orders', backref=backref('service_provider'))
     service_range = Column("service_range", Integer, default=5)
     trash = Column("trash", Boolean, default=False)
-    day_start = Column("day_start", Integer)
-    day_end = Column("day_end", Integer)
+    day_start = Column("day_start", Integer, default=8)
+    day_end = Column("day_end", Integer, default=22)
 
     skills = relationship("ServiceSkill", secondary='service_provider_skill')
 
@@ -191,6 +191,7 @@ class Orders(db.Base):
     service_provider_id = Column("service_provider_id", ForeignKey("service_provider.id"))
     job_id = Column("job_id", ForeignKey("job.id"))
     details = Column("details", JSON())
+    location_permitted = Column("location_permitted", Boolean, default=False)
 
     class Meta(object):
         follow = []
