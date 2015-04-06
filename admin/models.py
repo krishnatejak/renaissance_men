@@ -204,6 +204,7 @@ class MissedOrders(db.Base):
     id = Column(Integer, primary_key=True)
     location = Column("location", ARRAY(Float, dimensions=1))
     created = Column("created", DateTime(timezone=True), default=datetime.utcnow())
+    service_available = Column("service_available", Boolean, default=False)
 
     class Meta(object):
         follow = []

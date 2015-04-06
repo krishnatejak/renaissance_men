@@ -60,7 +60,7 @@ class MissedOrderHandler(BaseHandler):
     @handle_exceptions
     def post(self):
         data = self.check_input('create')
-        missed_order = save_missed_records(self.dbsession, data['location'])
+        missed_order = save_missed_records(self.dbsession, data)
         self.send_model_response(missed_order)
 
 

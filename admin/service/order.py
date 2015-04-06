@@ -76,9 +76,12 @@ def get_su_orders_by_status(dbsession, status, user_id):
 
 
 @transaction
-def save_missed_records(dbsession, location):
+def save_missed_records(dbsession, data):
     missed_order = MissedOrders()
-    missed_order.location = location
+
+    missed_order.location = data['location']
+    if data['service_available']:
+        missed_order.service_available = True
     dbsession.add(missed_order)
     dbsession.commit()
     return missed_order
