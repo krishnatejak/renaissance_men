@@ -47,3 +47,7 @@ GOOGLE_OAUTH_REDIRECT = 'https://sevame.in/api/auth/google/'
 
 #Google API Key
 GOOGLE_GCM_API_KEY = 'AIzaSyBs0_M1TNHMMkIVv6k4-kcGJsrRYsUHm5Y'
+
+#Sendgrid auth details
+EmailUserName = 'sevame'
+EmailUserPasswd = 'tech!@serve1729'

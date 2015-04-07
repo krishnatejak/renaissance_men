@@ -9,4 +9,4 @@ SLOT_DEFAULT_DURATION = {
 
 SUPPORT_EMAIL_ADDRESS = 'contact@sevame.in'
 
-ORDER_ACCEPTED_SUBJECT = 'Order has been successfully please.'
+ORDER_ACCEPTED_SUBJECT = 'Order has been successfully placed.'

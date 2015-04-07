@@ -33,7 +33,7 @@ class OrderHandler(BaseHandler):
         self.send_model_response(orders)
 
     @handle_exceptions
-    @allow('service_user', 'admin')
+    @allow('admin', 'service_provider')
     def put(self, *args, **kwargs):
         data = self.check_input('update')
         order = update_order(self.dbsession, kwargs['pk'], data)

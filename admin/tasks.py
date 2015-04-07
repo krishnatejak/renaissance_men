@@ -8,6 +8,7 @@ from admin.models import *
 import config
 import constants
 from admin.service.sms import Sms
+from admin.service import email as email
 
 @celery.task(name='admin.serviceprovider.add', base=DBTask, bind=True)
 def add_service_provider(self, spid):
@@ -136,7 +137,7 @@ def post_order_creation(self, spid, slot_start, order_id):
     order = self.db.query(Orders).filter(
         Orders.id == order_id
     ).one()
-    cust_phnum = self.db.query(BaseUser.phone_number, BaseUser.name).filter(
+    cust_phnum = self.db.query(BaseUser.phone_number, BaseUser.name, BaseUser.email).filter(
         ServiceUser.id == order.service_user_id,
         BaseUser.id == ServiceUser.user_id
     ).one()
@@ -156,6 +157,26 @@ def post_order_creation(self, spid, slot_start, order_id):
     }
     sp_sms = Sms(**kwargs)
     sp_sms.send_sms()
+
+    #Email sending
+    if order.service == 'laundry':
+        scheduled_date = order.scheduled
+        date = '{0}-{1} on {2}'.format(
+            scheduled_date.strftime('%H:%M'),
+            (scheduled_date + datetime.timedelta(minutes=30)).strftime('%H:%M'),
+            scheduled_date.strftime('%d-%m-%Y')
+        )
+        kwargs = {
+            'service' : order.service,
+            'request' : order.request,
+            'order_id': order.id,
+            'address' : order.address,
+            'phone'   : phone_number.phone_number,
+            'date'    : date
+        }
+    order_email = email.OrderEmail(cust_phnum.email, cust_phnum.name, **kwargs)
+    order_email.send_email()
+
 
 @celery.task(name='admin.job.create', base=DBTask, bind=True)
 def create_job(self, jid):
