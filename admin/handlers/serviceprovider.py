@@ -9,10 +9,13 @@ from admin.service.order import get_sp_orders_by_status
 from tornado.gen import coroutine
 import tornado.httpclient
 import tornado.web
+from sqlalchemy.orm.query import Query
+
 
 from botocore_tornado import session as botosession
 __all__ = ['ServiceProviderHandler', 'ServiceProviderJobHandler',
-           'ServiceProviderOrdersHandler', 'ServiceProviderUploadHandler']
+           'ServiceProviderOrdersHandler', 'ServiceProviderUploadHandler',
+           'AdminServiceProviderHandler']
 
 
 class ServiceProviderHandler(BaseHandler):
@@ -35,13 +38,6 @@ class ServiceProviderHandler(BaseHandler):
         service_provider = get_service_provider(self.dbsession, kwargs['pk'])
         self.send_model_response(service_provider)
 
-    @handle_exceptions
-    @allow('admin')
-    def post(self, *args, **kwargs):
-        data = self.check_input('create')
-        service_provider = create_service_provider(self.dbsession, data)
-        self.send_model_response(service_provider)
-
     def send_model_response(self, instance_or_query):
         uri_kwargs = {
             'resource_name': self.resource_name
@@ -51,11 +47,17 @@ class ServiceProviderHandler(BaseHandler):
             self.model_response_uris,
             uri_kwargs
         )
-
-        models_dict['skills'] = get_service_provider_skills(
-            self.dbsession,
-            instance_or_query.id
-        )
+        if isinstance(instance_or_query, Query):
+            for sp in models_dict['objects']:
+                sp['skills'] = get_service_provider_skills(
+                    self.dbsession,
+                    sp['id']
+                )
+        else:
+            models_dict['skills'] = get_service_provider_skills(
+                self.dbsession,
+                instance_or_query.id
+            )
 
         self.set_status(200)
         self.set_header("Content-Type", "application/json")
@@ -175,3 +177,31 @@ class ServiceProviderUploadHandler(BaseHandler):
             else:
                 print 'invalid document type %s' % document_type
         return files
+
+
+class AdminServiceProviderHandler(ServiceProviderHandler):
+
+    @handle_exceptions
+    @allow('admin')
+    def post(self, *args, **kwargs):
+        data = self.check_input('create')
+        service_provider = create_service_provider(self.dbsession, data)
+        self.send_model_response(service_provider)
+
+    @handle_exceptions
+    @allow('admin')
+    def put(self, *args, **kwargs):
+        data = self.check_input('update')
+        service_provider = update_service_provider(
+            self.dbsession, kwargs['pk'], data
+        )
+        self.send_model_response(service_provider)
+
+    @allow('admin', allow_list=True)
+    def get(self, *args, **kwargs):
+        service_provider = get_service_provider(self.dbsession, kwargs['pk'])
+        self.send_model_response(service_provider)
+
+    @allow('admin')
+    def delete(self, *args, **kwargs):
+        pass

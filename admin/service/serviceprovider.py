@@ -10,8 +10,8 @@ import config
 
 __all__ = ['update_service_provider', 'get_service_provider',
            'delete_service_provider', 'create_service_provider',
-           'get_service_provider_skills',
-           'fetch_jobs_by_status', 'get_sp_for_phone_number']
+           'get_service_provider_skills', 'fetch_jobs_by_status',
+           'get_sp_for_phone_number', 'get_service_providers']
 
 @transaction
 def create_service_provider(dbsession, data):
@@ -57,13 +57,23 @@ def update_service_provider(dbsession, provider_id, data):
     return service_provider
 
 
-def get_service_provider(dbsession, spid):
-    service_provider = dbsession.query(ServiceProvider).filter(
-        ServiceProvider.id == spid
-    ).one()
+def get_service_provider(dbsession, spid=None):
+    if spid:
+        service_provider = dbsession.query(ServiceProvider).filter(
+            ServiceProvider.id == spid,
+            ServiceProvider.trash == False
+        ).one()
+    else:
+        service_provider = dbsession.query(ServiceProvider).filter(
+            ServiceProvider.trash == False
+        )
 
     return service_provider
 
+
+def delete_service_provider(dbsession, spid):
+    # delete service provider, skills
+    pass
 
 @transaction
 def delete_service_provider(dbsession, provider_id):

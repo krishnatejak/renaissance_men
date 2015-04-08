@@ -42,15 +42,18 @@ admin_application = Application(
         (r'/api/order/?(?P<pk>[\d]+)?', OrderHandler),
         (r'/api/order/status/(?P<status>[a-z]+)', SuOrderStatusHandler),
         (r'/api/order/(?P<pk>[\d]+)/rating/(?P<rating>[\d])', OrderRatingHandler),
-        (r'/api/order/(?P<pk>[\d]+)/status/(?P<status>[a-z]+)', UpdateOrderStatusHandler),
-        (r'/api/order/(?P<pk>[\d]+)/assign', AssignOrderHandler),
         (r'/api/missedorder/?', MissedOrderHandler),
 
         (r'/api/user', UserHandler),
         (r'/api/user/phone/verify', UserVerifyHandler),
 
         (r'/api/signup/?', SignupHandler),
-        (r'/api/close', CloseHandler)
+        (r'/api/close', CloseHandler),
+
+        # admin apis
+        (r'/api/admin/serviceprovider/(?P<pk>/\d+)?', AdminServiceProviderHandler),
+        (r'/api/admin/order/(?P<pk>[\d]+)/assign', AssignOrderHandler),
+        (r'/api/admin/order/(?P<pk>[\d]+)/status/(?P<status>[a-z]+)', UpdateOrderStatusHandler),
     ],
     google_oauth={
         "key": config.GOOGLE_OAUTH2_CLIENT_ID,
