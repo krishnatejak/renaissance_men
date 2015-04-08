@@ -30,6 +30,7 @@ admin_application = Application(
         (r'/api/serviceprovider', ServiceProviderHandler),
         #(r'/api/serviceprovider/jobs', ServiceProviderJobHandler),
         (r'/api/serviceprovider/orders', ServiceProviderOrdersHandler),
+        (r'/api/serviceprovider(?P<pk>/\d+)?/upload', ServiceProviderUploadHandler),
         #(r'/api/job/?', JobHandler),
         #(r'/api/job/([\d]+)?/?', JobHandler),
         #(r'/api/job/([\d]+)/start/?', JobStartHandler),

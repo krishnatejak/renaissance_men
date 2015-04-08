@@ -73,6 +73,8 @@ class ServiceProvider(db.Base):
     trash = Column("trash", Boolean, default=False)
     day_start = Column("day_start", Integer, default=8)
     day_end = Column("day_end", Integer, default=22)
+    details = Column("details", JSON(), default={})
+
 
     skills = relationship("ServiceSkill", secondary='service_provider_skill')
 

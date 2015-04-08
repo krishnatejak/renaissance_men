@@ -57,13 +57,10 @@ def update_service_provider(dbsession, provider_id, data):
     return service_provider
 
 
-def get_service_provider(dbsession, provider_id):
-    if provider_id:
-        service_provider = dbsession.query(ServiceProvider).filter(
-            ServiceProvider.id == provider_id
-        ).one()
-    else:
-        raise AppException('Please provide a service provider id')
+def get_service_provider(dbsession, spid):
+    service_provider = dbsession.query(ServiceProvider).filter(
+        ServiceProvider.id == spid
+    ).one()
 
     return service_provider
 

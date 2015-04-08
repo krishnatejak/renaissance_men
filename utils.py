@@ -192,6 +192,10 @@ def allow(*user_types, **basekw):
                     raise HTTPError(403, reason='cannot update resource without pk')
 
             elif self.request.method == 'POST':
+                if base and not kwargs['pk']:
+                    kwargs['pk'] = uid
+                if kwargs['pk']:
+                    kwargs['pk'] = kwargs['pk'].strip('/')
                 if kwargs['pk'] and not post_pk:
                     raise HTTPError(403, reason='cannot post with pk')
 
