@@ -199,6 +199,8 @@ class AdminServiceProviderHandler(ServiceProviderHandler):
 
     @allow('admin', allow_list=True)
     def get(self, *args, **kwargs):
+        if kwargs['pk']:
+            kwargs['pk'] = kwargs['pk'].strip('/')
         service_provider = get_service_provider(self.dbsession, kwargs['pk'])
         self.send_model_response(service_provider)
 
