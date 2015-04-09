@@ -52,7 +52,7 @@ admin_application = Application(
 
         # admin apis
         (r'/api/admin/serviceprovider/?(?P<pk>\d+)?', AdminServiceProviderHandler),
-        (r'/api/admin/order/?(?P<pk>[\d]+)?', AdminOrderHandler),
+        (r'/api/admin/order/?(?P<pk>\d+)?', AdminOrderHandler),
         (r'/api/admin/order/(?P<pk>[\d]+)/assign', AssignOrderHandler),
         (r'/api/admin/order/(?P<pk>[\d]+)/status/(?P<status>[a-z]+)', UpdateOrderStatusHandler),
     ],
