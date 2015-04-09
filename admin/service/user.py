@@ -38,10 +38,9 @@ def update_user(dbsession, uid, data):
         BaseUser.id == uid
     ).one()
     phone_number_changed = False
-    if 'phone_number' in data:
+    if 'phone_number' in data and data['phone_number'] != user.phone_number:
         if phone_number_exists(dbsession, data['phone_number']):
             raise AppException('Phone number exists')
-    if 'phone_number' in data and data['phone_number'] != user.phone_number:
         phone_number_changed = True
 
     # remove all data that should be ignored
