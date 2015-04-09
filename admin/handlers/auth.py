@@ -82,7 +82,6 @@ class GoogleAuthHandler(BaseHandler, GoogleOAuth2Mixin):
                     data['access_token'],
                     config.GOOGLE_OAUTH2_CLIENT_ID
                 )
-                print details
                 user = handle_user_authentication(
                     self.dbsession, details, user_type
                 )

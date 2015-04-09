@@ -201,6 +201,27 @@ class Orders(db.Base):
         exclude = []
         fk = []
 
+    """
+    Details structure for different services:
+
+    Laundry:
+        "details":{
+            "items":[
+                    {
+                    "name" : "shirts",
+                    "quantity": "2",
+                    "cost":"50"
+                },
+                {
+                    "name" : "jeans",
+                    "quantity": "2",
+                    "cost":"50"
+                }
+            ]
+        }
+    """
+
+
 class MissedOrders(db.Base):
     __tablename__ = 'missedorders'
 

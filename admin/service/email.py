@@ -1,9 +1,14 @@
+import json
 import sendgrid
 import config as config
 import constants as constants
 
 from admin.templates.order_accepted_laundry import order_accepted_laundry
+from admin.templates.laundry_picked import table_data, laundry_picked
 from admin.templates.base_template import base_template
+from admin.templates.feedback_template import feedback_template
+
+from utils import calculate_hmac
 
 class EmailService(object):
     def __init__(self, *args, **kwargs):
@@ -39,7 +44,6 @@ class EmailService(object):
                 to_list = self.to_email.split(',')
                 message.add_to(self.to_email)
             else:
-                print 'self.to_email() %s' %self.to_email
                 message.add_to(self.to_email)
             if self.bcc_email:
                 bcc_list = self.bcc_email.split(',')
@@ -53,31 +57,66 @@ class EmailService(object):
 
 class OrderEmail(EmailService):
     def __init__(self, email, first_name, **kwargs):
-        self.signup_email = kwargs.get('signup_email')
         self.service = kwargs['service']
-        if self.service == 'laundry':
+        self.template = kwargs['template']
+        if self.template == 'order_accepted_laundry':
             self.request = kwargs['request']
             self.order_id = kwargs['order_id']
             self.address = kwargs['address']
             self.phone = kwargs['phone']
             self.date = kwargs['date']
+            subject = constants.ORDER_ACCEPTED_SUBJECT
+        elif self.template == 'laundry_picked':
+            self.details = kwargs['details']
+            self.link = kwargs['link']
+            subject = constants.LAUNDRY_BILL_EMAIL_SUBJECT
+        elif self.template == 'feedback':
+            self.order_id = kwargs['order_id'],
+            self.user_id = kwargs['user_id']
+            subject = constants.FEEDBACK_SUBJECT
 
         super(OrderEmail, self).__init__(
                                             email=email,
                                             first_name=first_name,
-                                            subject=constants.ORDER_ACCEPTED_SUBJECT
+                                            subject=subject
                                         )
 
     def generate_email_body(self):
-            if self.service == 'laundry':
-                template_content = order_accepted_laundry.format(
-                    customer_name=self.first_name,
-                    service=self.service,
-                    request=self.request,
-                    order_number=self.order_id,
-                    pickup_time=self.date,
-                    order_address=self.address,
-                    phone_number=self.phone
-                )
-
-            self.html = base_template.format(template_content=template_content)
+        if self.template == 'order_accepted_laundry':
+            template_content = order_accepted_laundry.format(
+                customer_name=self.first_name,
+                service=self.service,
+                request=self.request,
+                order_number=self.order_id,
+                pickup_time=self.date,
+                order_address=self.address,
+                phone_number=self.phone
+            )
+        elif self.template == 'laundry_picked':
+            items = json.loads(self.details)['items']
+            html_table_data = ""
+            bill_amount = 0
+            for item in items:
+                html_table_data = html_table_data + table_data.format(
+                                                                item = item['name'],
+                                                                quantity = item['quantity'],
+                                                                amount = item['cost']
+                                                    )
+                bill_amount += int(item['cost'])
+            template_content = laundry_picked.format(
+                                        customer_name=self.first_name,
+                                        table_data = html_table_data,
+                                        link = self.link,
+                                        bill_amount = bill_amount
+                                )
+        elif self.template == 'feedback':
+            feedback_identifier = "{0}.su.{1}".format(self.order_id, self.user_id)
+            feedback_identifier = "{0}.{1}".format(feedback_identifier,calculate_hmac(feedback_identifier))
+            template_content = feedback_template.format(
+                customer_name=self.first_name,
+                service=self.service,
+                order_id=self.order_id,
+                rating_link=constants.FEEDBACK_LINK,
+                order_identity=feedback_identifier
+            )
+        self.html = base_template.format(template_content=template_content)

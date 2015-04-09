@@ -1,8 +1,7 @@
 order_accepted_laundry = """
 <style type="text/css">
     td {{
-         padding:2%;
-         border: 1px solid black;
+         padding:2%;border: 1px solid black;
     }}
 </style>
 <p>Dear {customer_name}</p>
@@ -20,27 +19,27 @@ order_accepted_laundry = """
    <div class="panel-heading">
         <p><b>Pricing</b></p>
     </div>
-   <table class="table" style="border: 1px solid black">
+   <table class="table" style="width:75%;border: 1px solid black;border-collapse: collapse;">
       <tbody>
          <tr>
-            <td><strong>Type of cloth</strong></td>
-            <td>Wash+Iron</td>
-            <td>Iron</td>
+            <td style="padding:2%;border: 1px solid black;"><strong>Type of cloth</strong></td>
+            <td style="padding:2%;border: 1px solid black;">Wash+Iron</td>
+            <td style="padding:2%;border: 1px solid black;">Iron</td>
          </tr>
          <tr>
-            <td><strong>Regulars</strong> (Shirts,Pants,Salwars etc.)</td>
-            <td>25</td>
-            <td>7</td>
+            <td style="padding:2%;border: 1px solid black;"><strong>Regulars</strong> (Shirts,Pants,Salwars etc.)</td>
+            <td style="padding:2%;border: 1px solid black;">25</td>
+            <td style="padding:2%;border: 1px solid black;">7</td>
          </tr>
          <tr>
-            <td><strong>Large Wearables</strong> (Sarees, Suits,Pull-Overs etc.)</td>
-            <td>50</td>
-            <td>10</td>
+            <td style="padding:2%;border: 1px solid black;"><strong>Large Wearables</strong> (Sarees, Suits,Pull-Overs etc.)</td>
+            <td style="padding:2%;border: 1px solid black;">50</td>
+            <td style="padding:2%;border: 1px solid black;">10</td>
          </tr>
          <tr>
-            <td><strong>Non-Wearables</strong> (BedSheets, Curtains etc.)</td>
-            <td>70</td>
-            <td>15</td>
+            <td style="padding:2%;border: 1px solid black;"><strong>Non-Wearables</strong> (BedSheets, Curtains etc.)</td>
+            <td style="padding:2%;border: 1px solid black;">70</td>
+            <td style="padding:2%;border: 1px solid black;">15</td>
          </tr>
       </tbody>
    </table>

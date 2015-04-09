@@ -1,3 +1,5 @@
+import json
+
 from admin.models import Orders, MissedOrders, OrderRating
 from admin import tasks
 import config
@@ -54,10 +56,16 @@ def get_order(dbsession, user_id, oid=None):
 def update_order(dbsession, oid, data):
     order = dbsession.query(Orders).filter(
         Orders.id == oid
-    )
+    ).one()
     update_model_from_dict(order, data)
     dbsession.add(order)
     dbsession.commit()
+
+    tasks.post_order_update.apply_async(
+        (data.get('status_changed'), oid),
+        queue=config.ORDER_QUEUE
+    )
+
     return order
 
 

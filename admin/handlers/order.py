@@ -11,7 +11,7 @@ __all__ = ['OrderHandler', 'SuOrderStatusHandler', 'MissedOrderHandler',
 class OrderHandler(BaseHandler):
     resource_name = 'order'
     create_required = {'service', 'request', 'scheduled', 'address'}
-    update_ignored = {'id', 'status', 'completed', 'created'}
+    update_ignored = {'id', 'completed', 'created'}
 
     @handle_exceptions
     @allow('service_user')
