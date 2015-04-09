@@ -11,7 +11,7 @@ from utils import transaction, update_model_from_dict, parse_datetime
 
 __all__ = ['create_order', 'get_order', 'get_su_orders_by_status', 'update_order',
            'save_missed_records', 'save_rating', 'update_order_status',
-           'assign_order_to_phone_number']
+           'assign_order_to_phone_number', 'get_admin_orders']
 
 
 @transaction
@@ -172,8 +172,23 @@ def assign_order_to_phone_number(dbsession, oid, phone_number):
     service_provider = get_sp_for_phone_number(dbsession, phone_number)
     order = dbsession.query(Orders).filter(
         Orders.id == oid
-    )
+    ).one()
     order.service_provider_id = service_provider.id
     dbsession.add(order)
     dbsession.commit()
+    return order
+
+
+def get_order_rating_message(dbsession, oid, user_type='service_user'):
+    pass
+
+
+def get_admin_orders(dbsession, oid=None):
+
+    if oid:
+        order = dbsession.query(Orders).filter(
+            Orders.id == oid
+        ).one()
+    else:
+        order = dbsession.query(Orders).order_by(Orders.created.desc())
     return order

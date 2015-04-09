@@ -19,11 +19,23 @@ def create_service_provider(dbsession, data):
         'email': data['email'],
         'phone_number': data['phone_number']
     }
+    skills = data.pop('skills', [])
+
     user = create_user(dbsession, user_data)
     service_provider = ServiceProvider()
     service_provider.user_id = user.id
     update_model_from_dict(service_provider, data)
     dbsession.add(service_provider)
+    if skills:
+        for service_name, service_skills in skills.iteritems():
+            service = get_or_create_service(dbsession, service_name)
+            sp_service = ServiceProviderService()
+            sp_service.service_provider_id = service_provider.id
+            sp_service.service_id = service.id
+            dbsession.add(sp_service)
+            update_skills(dbsession, service_provider.id, service.id, service_skills)
+
+
     dbsession.commit()
     return service_provider
 
@@ -194,6 +206,7 @@ def fetch_jobs_by_status(dbsession, spid, status):
 def get_sp_for_phone_number(dbsession, phone_number):
     service_provider = dbsession.query(ServiceProvider).filter(
         BaseUser.phone_number == phone_number,
-        ServiceProvider.trash == False
+        ServiceProvider.trash == False,
+        ServiceProvider.user_id == BaseUser.id
     ).one()
     return service_provider

@@ -5,7 +5,7 @@ from utils import allow
 
 __all__ = ['OrderHandler', 'SuOrderStatusHandler', 'MissedOrderHandler',
            'OrderRatingHandler', 'UpdateOrderStatusHandler',
-           'AssignOrderHandler']
+           'AssignOrderHandler', 'AdminOrderHandler']
 
 
 class OrderHandler(BaseHandler):
@@ -32,12 +32,7 @@ class OrderHandler(BaseHandler):
         )
         self.send_model_response(orders)
 
-    @handle_exceptions
-    @allow('admin', 'service_provider')
-    def put(self, *args, **kwargs):
-        data = self.check_input('update')
-        order = update_order(self.dbsession, kwargs['pk'], data)
-        self.send_model_response(order)
+
 
 
 class SuOrderStatusHandler(BaseHandler):
@@ -103,3 +98,29 @@ class AssignOrderHandler(BaseHandler):
             self.dbsession, kwargs['pk'], data['phone_number']
         )
         self.send_model_response(order)
+
+
+class AdminOrderHandler(OrderHandler):
+
+    @handle_exceptions
+    @allow('admin', allow_list=True)
+    def get(self, *args, **kwargs):
+        orders = get_admin_orders(self.dbsession, kwargs['pk'])
+        self.send_model_response(orders)
+
+    @handle_exceptions
+    @allow('admin')
+    def post(self, *args, **kwargs):
+        pass
+
+    @handle_exceptions
+    @allow('admin', 'service_provider')
+    def put(self, *args, **kwargs):
+        data = self.check_input('update')
+        order = update_order(self.dbsession, kwargs['pk'], data)
+        self.send_model_response(order)
+
+    @handle_exceptions
+    @allow('admin')
+    def delete(self, *args, **kwargs):
+        pass
