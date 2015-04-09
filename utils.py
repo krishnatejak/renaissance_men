@@ -2,12 +2,15 @@ import json
 import datetime
 import decimal
 import random
+import hmac
+import hashlib
 
 from sqlalchemy.orm.query import Query
 from tornado.web import authenticated
 from tornado.web import HTTPError
 from functools import wraps
 
+from config import COOKIE_SECRET
 import db
 
 from exc import AppException
@@ -203,3 +206,7 @@ def allow(*user_types, **basekw):
         return _wrapper
 
     return validate
+
+
+def calculate_hmac(message):
+    return hmac.new(COOKIE_SECRET, msg=message, digestmod=hashlib.sha256).digest()

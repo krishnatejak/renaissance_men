@@ -10,3 +10,7 @@ SLOT_DEFAULT_DURATION = {
 SUPPORT_EMAIL_ADDRESS = 'contact@sevame.in'
 
 ORDER_ACCEPTED_SUBJECT = 'Order has been successfully placed.'
+LAUNDRY_BILL_EMAIL_SUBJECT  = 'Order has been picked up'
+FEEDBACK_SUBJECT = 'Order completed.'
+
+FEEDBACK_LINK = ""

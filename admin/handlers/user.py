@@ -14,7 +14,6 @@ class UserHandler(BaseHandler):
     @handle_exceptions
     @allow('service_provider', 'service_user', 'admin', base=True)
     def get(self, *args, **kwargs):
-        print kwargs
         user = get_user(self.dbsession, kwargs['buid'])
         self.send_model_response(user)
 

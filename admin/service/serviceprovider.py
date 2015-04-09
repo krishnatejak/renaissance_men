@@ -11,7 +11,7 @@ import config
 __all__ = ['update_service_provider', 'get_service_provider',
            'delete_service_provider', 'create_service_provider',
            'get_service_provider_skills', 'fetch_jobs_by_status',
-           'get_sp_for_phone_number', 'get_service_providers']
+           'get_sp_for_phone_number']
 
 @transaction
 def create_service_provider(dbsession, data):

@@ -10,39 +10,27 @@ base_template = """
             }}
 
         .table {{
-            width:75%;
-            border: 1px solid black;
-            border-collapse: collapse;
+            width:75%;border: 1px solid black;border-collapse: collapse;
         }}
 
         .content {{
-            border:2px solid #f0ad4e;
-            border-radius:5px;
-            padding: 2% 5%;
-            background-color:#F9ECD8;
+            border:2px solid #f0ad4e;border-radius:5px;padding: 2% 5%;background-color:#F9ECD8;
         }}
 
         .container {{
-             background-color:white;
-             width:100%;
-             height:100%;
+             background-color:white;width:100%;height:100%;
         }}
 
         .logo {{
-            padding-top:16px;
-            width:7%;
-            float:unset;
+            padding-top:16px;width:7%;float:unset;
         }}
 
         .imgclass {{
-            padding-left:10%;
-            padding-right:10%;
+            padding-left:10%;padding-right:10%;
         }}
 
         .impdiv {{
-            padding-left:10%;
-            padding-right:10%;
-            padding-top:2%;
+            padding-left:10%;padding-right:10%;padding-top:2%;
         }}
 
         .contact {{
@@ -52,14 +40,14 @@ base_template = """
     </style>
 </head>
 <body>
-    <div class='container'>
-        <div class="imgclass">
+    <div class='container' style="background-color:white;width:100%;height:100%;">
+        <div class="imgclass" style="padding-left:10%;padding-right:10%;">
             <span>
-                <img class="logo" src="https://sevame.in/images/ignore/Shape.png">
+                <img class="logo" style="padding-top:16px;width:7%;float:unset;" src="https://sevame.in/images/ignore/Shape.png">
             <span>
         </div>
-        <div class="impdiv">
-            <div class="content">
+        <div class="impdiv" style="padding-left:10%;padding-right:10%;padding-top:2%;">
+            <div class="content" style="border:2px solid #f0ad4e;border-radius:5px;padding: 2% 5%;background-color:#F9ECD8;">
 
                 {template_content}
             </div>
@@ -70,8 +58,8 @@ base_template = """
                 </div>
                 <div style="float:right;  width:70%; color:#f0ad4e; text-align: right; padding-top:8px">
                     <span>
-                            <span class="contact">Phone: +91-9901971321</span>
-                            <span class="contact">Email: <a href="mailto:contact@sevame.in" style="color:#f0ad4e">contact@sevame.in</a></span>
+                            <span class="contact" style="padding-right:1%">Phone: +91-9901971321</span>
+                            <span class="contact" style="padding-right:1%">Email: <a href="mailto:contact@sevame.in" style="color:#f0ad4e">contact@sevame.in</a></span>
                     </span>
                 </div>
             </div>

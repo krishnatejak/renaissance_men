@@ -1,6 +1,7 @@
 import pyotp
 import gcmclient
 import datetime
+import json
 
 from background import celery
 from background import DBTask
@@ -137,7 +138,7 @@ def post_order_creation(self, spid, slot_start, order_id):
     order = self.db.query(Orders).filter(
         Orders.id == order_id
     ).one()
-    cust_phnum = self.db.query(BaseUser.phone_number, BaseUser.name, BaseUser.email).filter(
+    customer = self.db.query(BaseUser.phone_number, BaseUser.name, BaseUser.email).filter(
         ServiceUser.id == order.service_user_id,
         BaseUser.id == ServiceUser.user_id
     ).one()
@@ -148,8 +149,8 @@ def post_order_creation(self, spid, slot_start, order_id):
                                         time=slot_start,
                                         order_id=order_id,
                                         address=order.address,
-                                        phone_number=cust_phnum.phone_number,
-                                        name=cust_phnum.name
+                                        phone_number=customer.phone_number,
+                                        name=customer.name
                                     )
     kwargs = {
         "to_number": str(phone_number.phone_number),
@@ -171,12 +172,42 @@ def post_order_creation(self, spid, slot_start, order_id):
             'request' : order.request,
             'order_id': order.id,
             'address' : order.address,
-            'phone'   : phone_number.phone_number,
-            'date'    : date
+            'phone'   : customer.phone_number,
+            'date'    : date,
+            'template': 'order_accepted_laundry'
         }
-    order_email = email.OrderEmail(cust_phnum.email, cust_phnum.name, **kwargs)
+    order_email = email.OrderEmail(customer.email, customer.name, **kwargs)
     order_email.send_email()
 
+@celery.task(name='admin.order.updated', base=DBTask, bind=True)
+def post_order_update(self, status_changed, order_id):
+    if status_changed:
+        order = self.db.query(Orders).filter(
+            Orders.id == order_id
+        ).one()
+        customer = self.db.query(BaseUser.name, BaseUser.email).filter(
+            ServiceUser.id == order.service_user_id,
+            BaseUser.id == ServiceUser.user_id
+        ).one()
+        #Sending email for order updated
+        #TODO integrate PAYU
+        if order.status == 'processing':
+            if order.service == 'laundry':
+                kwargs = {
+                    'details' : json.dumps(order.details),
+                    'template': 'laundry_picked',
+                    'service' : order.service,
+                    'link'    : 'link'
+                }
+        elif order.status == 'completed':
+            kwargs = {
+                'template': 'feedback',
+                'service' : order.service,
+                'order_id': order_id,
+                'user_id' : order.service_user_id
+             }
+        order_email = email.OrderEmail(customer.email, customer.name, **kwargs)
+        order_email.send_email()
 
 @celery.task(name='admin.job.create', base=DBTask, bind=True)
 def create_job(self, jid):
