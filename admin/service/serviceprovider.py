@@ -44,10 +44,19 @@ def update_service_provider(dbsession, provider_id, data):
     if skills:
         for service_name, service_skills in skills.iteritems():
             service = get_or_create_service(dbsession, service_name)
-            sp_service = ServiceProviderService()
-            sp_service.service_provider_id = service_provider.id
-            sp_service.service_id = service.id
-            dbsession.add(sp_service)
+            try:
+                sp_service = dbsession.query(ServiceProviderService).filter(
+                    ServiceProviderService.service_id == service.id,
+                    ServiceProviderService.service_provider_id == service_provider.id,
+                    ServiceProviderService.trash == False
+                ).one()
+                print 'inside try %s' %sp_service.id
+            except Exception as e:
+                sp_service = ServiceProviderService()
+                sp_service.service_provider_id = service_provider.id
+                sp_service.service_id = service.id
+                dbsession.add(sp_service)
+
             update_skills(dbsession, service_provider.id, service.id, service_skills)
 
     tasks.update_service_provider.apply_async(
@@ -114,18 +123,12 @@ def update_skills(dbsession, spid, sid, skills):
     created_skills = current_skills - existing_skills
     deleted_skills = existing_skills - current_skills
     for created_skill in created_skills:
-        service_skill = dbsession.query(
-            ServiceSkill
-        ).filter(
-            ServiceSkill.name == created_skill[0]
-        ).all()
-        if not service_skill:
-            service_skill = ServiceSkill()
-            service_skill.service_id = sid
-            service_skill.name = created_skill[0]
-            service_skill.inspection = created_skill[1]
-            dbsession.add(service_skill)
-            dbsession.commit()
+        service_skill = ServiceSkill()
+        service_skill.service_id = sid
+        service_skill.name = created_skill[0]
+        service_skill.inspection = created_skill[1]
+        dbsession.add(service_skill)
+        dbsession.commit()
 
         sp_skill = ServiceProviderSkill()
         sp_skill.service_skill_id = service_skill.id
@@ -150,12 +153,14 @@ def get_service_provider_skills(dbsession, spid):
     service_provider = dbsession.query(ServiceProvider).filter(
                                     ServiceProvider.id == spid,
                                 ).one()
+
     sp_skills = dbsession.query(ServiceProviderSkill).filter(
                                     ServiceProviderSkill.service_provider_id == spid,
                                     ServiceProviderSkill.trash == False
                                 ).all()
 
     sp_skill_ids = [sp_skill.service_skill_id for sp_skill in sp_skills]
+
     service_skills = {}
     for skill in service_provider.skills:
         if skill.id in sp_skill_ids:
