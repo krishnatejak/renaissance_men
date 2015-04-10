@@ -51,11 +51,11 @@ def update_service_provider(dbsession, provider_id, data):
     user = data.pop('user', {})
     update_model_from_dict(service_provider, data)
     dbsession.add(service_provider)
-    dbsession.commit()
 
     if skills:
         update_skills(dbsession, service_provider.id, skills)
 
+    dbsession.commit()
     tasks.update_service_provider.apply_async(
         args=(service_provider.id,),
         queue=config.SERVICE_PROVIDER_QUEUE
@@ -141,13 +141,11 @@ def update_skills(dbsession, spid, skills):
                     ServiceSkill.trash == False
                 ).one()
             except Exception as ee:
-                print 'no skill present'
                 service_skill = ServiceSkill()
                 service_skill.service_id = service.id
                 service_skill.name = created_skill[0]
                 service_skill.inspection = created_skill[1]
                 dbsession.add(service_skill)
-                dbsession.commit()
 
             sp_skill = ServiceProviderSkill()
             sp_skill.service_skill_id = service_skill.id
