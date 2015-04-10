@@ -68,11 +68,14 @@ class TornadoJSONEncoder(json.JSONEncoder):
 
 def transaction(function):
     """transaction decorator to handle session life cycle"""
-    def _wrapper(session, *args, **kwargs):
+    def _wrapper(dbsession, *args, **kwargs):
         try:
-            return function(session, *args, **kwargs)
+            dbsession.begin_nested()
+            response = function(dbsession, *args, **kwargs)
+            dbsession.commit()
+            return response
         except:
-            session.rollback()
+            dbsession.rollback()
             raise
         finally:
             pass
@@ -206,7 +209,5 @@ def allow(*user_types, **basekw):
         return _wrapper
 
     return validate
-
-
 def calculate_hmac(message):
     return hmac.new(COOKIE_SECRET, msg=message, digestmod=hashlib.sha256).digest()

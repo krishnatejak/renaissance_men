@@ -174,6 +174,7 @@ def assign_order_to_phone_number(dbsession, oid, phone_number):
         Orders.id == oid
     ).one()
     order.service_provider_id = service_provider.id
+    order.status = 'assigned'
     dbsession.add(order)
     dbsession.commit()
     return order
