@@ -1,3 +1,4 @@
+ALLOWED_SERVICES = ('laundry', 'plumber', 'electrician', 'cook')
 SLOT_NO_OF_DAYS = 3
 SLOT_DAY_END_HOUR = 19
 SLOT_DEFAULT_DURATION = {

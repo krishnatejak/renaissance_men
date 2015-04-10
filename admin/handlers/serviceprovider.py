@@ -47,17 +47,6 @@ class ServiceProviderHandler(BaseHandler):
             self.model_response_uris,
             uri_kwargs
         )
-        if isinstance(instance_or_query, Query):
-            for sp in models_dict['objects']:
-                sp['skills'] = get_service_provider_skills(
-                    self.dbsession,
-                    sp['id']
-                )
-        else:
-            models_dict['skills'] = get_service_provider_skills(
-                self.dbsession,
-                instance_or_query.id
-            )
 
         self.set_status(200)
         self.set_header("Content-Type", "application/json")

@@ -36,13 +36,26 @@ def add_service_provider(self, spid):
 
 @celery.task(name='admin.serviceprovider.update', base=DBTask, bind=True)
 def update_service_provider(self, spid):
-    service_provider, base_user = self.db.query(ServiceProvider, BaseUser).filter(
-        ServiceProvider.trash == False, ServiceProvider.id == spid, ServiceProvider.user_id == BaseUser.id
-    ).first()
+    service_provider = self.db.query(ServiceProvider).filter(
+        ServiceProvider.id == spid,
+        ServiceProvider.trash == False
+    ).one()
+
+    service_skills = service_provider.details['skills']
+    # populate redis entries
+    for service, skills in service_skills.iteritems():
+        # add service provider to <service>:providers set
+        self.r.sadd("{0}:providers".format(service), spid)
+        skill_names = [skill['name'] for skill in skills]
+
+        # add service provider service skills to sp:<id>:<service>:skills set
+        self.r.sadd("sp:{0}:{1}:skills".format(spid, service), *skill_names)
+
+
     sp_skills = self.db.query(ServiceProviderSkill).filter(
-                                    ServiceProviderSkill.service_provider_id == spid,
-                                    ServiceProviderSkill.trash == False
-                                ).all()
+        ServiceProviderSkill.service_provider_id == spid,
+        ServiceProviderSkill.trash == False
+    ).all()
 
     sp_skill_ids = [sp_skill.service_skill_id for sp_skill in sp_skills]
 
