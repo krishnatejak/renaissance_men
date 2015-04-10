@@ -178,7 +178,7 @@ class Signupemail(db.Base):
 class Orders(db.Base):
     __tablename__ = 'orders'
 
-    status_types = ('created', 'processing', 'assigned', 'completed')
+    status_types = ('created', 'processing', 'assigned', 'completed', 'cancelled', 'confirmed')
 
     id = Column(Integer, primary_key=True)
     service = Column("service", String(256))
