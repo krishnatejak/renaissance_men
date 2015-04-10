@@ -14,21 +14,21 @@ __all__ = ['update_service_provider', 'get_service_provider',
            'fetch_jobs_by_status', 'get_sp_for_phone_number']
 
 
-def clean_service_provider_skills(details):
+def clean_service_provider_skills(skills):
     """sanitizes service provider skills"""
     cleaned_skills = {}
-    if isinstance(details, dict) and'skills' in details:
-        for service, skills in details['skills'].iteritems():
-            if service in constants.ALLOWED_SERVICES:
-                skills = set([
-                    (skill['inspection'], skill['name']) for skill in skills
-                ])
-                skills = [
-                    dict(inspection=inspection, name=name)
-                    for inspection, name in skills
-                ]
-                cleaned_skills[service] = skills
+    for service, skills in skills.iteritems():
+        if service in constants.ALLOWED_SERVICES:
+            skills = set([
+                (skill['inspection'], skill['name']) for skill in skills
+            ])
+            skills = [
+                dict(inspection=inspection, name=name)
+                for inspection, name in skills
+            ]
+            cleaned_skills[service] = skills
     return cleaned_skills
+
 
 @transaction
 def create_service_provider(dbsession, data):
@@ -39,10 +39,7 @@ def create_service_provider(dbsession, data):
     user = create_user(dbsession, user_data)
     service_provider = ServiceProvider()
     service_provider.user_id = user.id
-    details = data.pop('details', {})
-    skills = clean_service_provider_skills(details)
-    details['skills'] = skills
-    data['details'] = details
+    data['skills'] = clean_service_provider_skills(data['skills'])
     update_model_from_dict(service_provider, data)
     dbsession.add(service_provider)
 
@@ -63,18 +60,12 @@ def update_service_provider(dbsession, provider_id, data):
     else:
         raise AppException('Please provide a service provider id')
 
-    details = data.pop('details', {})
-    skills = clean_service_provider_skills(details)
-    details['skills'] = skills
-    data['details'] = details
-
+    data['skills'] = clean_service_provider_skills(data['skills'])
     update_model_from_dict(service_provider, data)
     dbsession.add(service_provider)
 
-    if skills:
-        update_skills(dbsession, service_provider.id, skills)
-
     dbsession.commit()
+
     tasks.update_service_provider.apply_async(
         args=(service_provider.id,),
         queue=config.SERVICE_PROVIDER_QUEUE

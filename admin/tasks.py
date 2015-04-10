@@ -30,7 +30,7 @@ def add_service_provider(self, spid):
         "office_location":service_provider.office_location,
         "service_range":service_provider.service_range
         }
-    self.r.hmset("sp:{0}".format(service_provider.id),sp_dict)
+    self.r.hmset("sp:{0}".format(service_provider.id), sp_dict)
 
 
 
@@ -41,72 +41,36 @@ def update_service_provider(self, spid):
         ServiceProvider.trash == False
     ).one()
 
-    service_skills = service_provider.details['skills']
+    service_skills = service_provider.skills
     # populate redis entries
     for service, skills in service_skills.iteritems():
         # add service provider to <service>:providers set
-        self.r.sadd("{0}:providers".format(service), spid)
+        self.r.sadd("service:{0}:sp".format(service), spid)
         skill_names = [skill['name'] for skill in skills]
-
+        # TODO handle deleted skills
         # add service provider service skills to sp:<id>:<service>:skills set
         self.r.sadd("sp:{0}:{1}:skills".format(spid, service), *skill_names)
 
-
-    sp_skills = self.db.query(ServiceProviderSkill).filter(
-        ServiceProviderSkill.service_provider_id == spid,
-        ServiceProviderSkill.trash == False
-    ).all()
-
-    sp_skill_ids = [sp_skill.service_skill_id for sp_skill in sp_skills]
-
-    service_dict = {}
-    skills = service_provider.skills
-    for skill in skills:
-        service_name = skill.service.name
-        self.r.sadd("{0}:providers".format(service_name), spid)
-        if skill.id in sp_skill_ids:
-            self.r.sadd("sp:{0}:{1}:skills".format(spid, service_name), skill.name)
-
-            if service_dict.get(service_name):
-                service_dict[service_name].append(skill.name)
-            else:
-                service_dict[service_name] = [skill.name]
-
-    for key in service_dict:
-        redis_skills = self.r.smembers("sp:{0}:{1}:skills".format(spid, key))
-        self.r.sadd("sp:{0}:services".format(service_provider.id), key)
-        self.r.sadd("services:{0}:sps".format(key), service_provider.id)
-        spid = service_provider.id
+        # TODO handle availability
         availability = 1 if service_provider.availability else 0
         kwargs = {str(spid): availability}
         self.r.zadd(
-            "{0}:availability:sps".format(key),
+            "{0}:availability:sps".format(service),
             **kwargs
         )
-        db_skills = set(service_dict.get(key))
-        deleted_skills = redis_skills - db_skills
-        if deleted_skills:
-            self.r.srem("sp:{0}:{1}:skills".format(spid, key),*deleted_skills)
-
-
-    service_names = service_dict.keys()
-    redis_services = self.r.smembers("sp:{0}:services".format(service_provider.id))
-    deleted_services = redis_services - set(service_names)
-    if deleted_services:
-        self.r.srem("sp:{0}:services".format(spid),*deleted_services)
-
-    for service in deleted_services:
-        self.r.srem("services:{0}:sps".format(service), service_provider.id)
-
+    # TODO handle service provider details update
     sp_dict = {
-        "name":base_user.name,
-        "availability":service_provider.availability,
-        "phone_number":base_user.phone_number,
-        "home_location":service_provider.home_location,
-        "office_location":service_provider.office_location,
-        "service_range":service_provider.service_range
+        "name": service_provider.base_user.name,
+        "availability": service_provider.availability,
+        "phone_number": service_provider.base_user.phone_number,
+        "home_location": service_provider.home_location,
+        "office_location": service_provider.office_location,
+        "service_range": service_provider.service_range
         }
-    self.r.hmset("sp:{0}".format(service_provider.id),sp_dict)
+    self.r.hmset("sp:{0}".format(service_provider.id), sp_dict)
+
+    # TODO update slots for service provider
+
 
 @celery.task(name='admin.serviceprovider.delete', base=DBTask, bind=True)
 def delete_service_provider(self, spid):
