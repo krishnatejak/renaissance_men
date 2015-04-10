@@ -72,6 +72,7 @@ def transaction(function):
         try:
             dbsession.begin_nested()
             response = function(dbsession, *args, **kwargs)
+            dbsession.commit()
             return response
         except:
             dbsession.rollback()
