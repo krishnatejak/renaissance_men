@@ -31,3 +31,5 @@ oauth2client==1.4.6
 pyopenssl==0.14
 twilio==3.6.15
 sendgrid==1.3.0
+botocore-tornado==0.93.0
+botocore==0.100.0
