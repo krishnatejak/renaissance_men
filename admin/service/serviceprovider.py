@@ -2,7 +2,7 @@
 from admin.models import *
 from admin import tasks
 from admin.service.service import *
-from admin.service.user import create_user
+from admin.service.user import create_user, update_user
 from utils import transaction, update_model_from_dict
 from exc import AppException
 import config
@@ -51,6 +51,8 @@ def update_service_provider(dbsession, provider_id, data):
     user = data.pop('user', {})
     update_model_from_dict(service_provider, data)
     dbsession.add(service_provider)
+
+    update_user(dbsession, service_provider.user_id, user)
 
     if skills:
         update_skills(dbsession, service_provider.id, skills)
