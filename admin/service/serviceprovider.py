@@ -54,22 +54,7 @@ def update_service_provider(dbsession, provider_id, data):
     dbsession.commit()
 
     if skills:
-        for service_name, service_skills in skills.iteritems():
-            service = get_or_create_service(dbsession, service_name)
-            try:
-                sp_service = dbsession.query(ServiceProviderService).filter(
-                    ServiceProviderService.service_id == service.id,
-                    ServiceProviderService.service_provider_id == service_provider.id,
-                    ServiceProviderService.trash == False
-                ).one()
-                print 'inside try %s' %sp_service.id
-            except Exception as e:
-                sp_service = ServiceProviderService()
-                sp_service.service_provider_id = service_provider.id
-                sp_service.service_id = service.id
-                dbsession.add(sp_service)
-
-            update_skills(dbsession, service_provider.id, service.id, service_skills)
+        update_skills(dbsession, service_provider.id, skills)
 
     tasks.update_service_provider.apply_async(
         args=(service_provider.id,),
@@ -115,49 +100,78 @@ def delete_service_provider(dbsession, provider_id):
     return True
 
 
-def update_skills(dbsession, spid, sid, skills):
+def update_skills(dbsession, spid, skills):
+    '''
     current_skills = set([
         (skill['name'], skill['inspection'])
         for skill in skills
     ])
-
+    '''
     existing_skills = dbsession.query(
-        ServiceSkill.name, ServiceSkill.inspection
+        ServiceSkill.name, ServiceSkill.inspection, Service.id
     ).filter(
         ServiceProviderSkill.service_provider_id == spid,
         ServiceSkill.id == ServiceProviderSkill.service_skill_id,
-        ServiceSkill.service_id == sid,
-        ServiceSkill.trash == False
+        ServiceSkill.trash == False,
+        ServiceSkill.service_id == Service.id,
+        ServiceProviderSkill.trash == False
     ).all()
 
-    existing_skills = set(existing_skills)
+    skill_names = [esk.name for esk in existing_skills]
 
-    created_skills = current_skills - existing_skills
-    deleted_skills = existing_skills - current_skills
-    for created_skill in created_skills:
-        service_skill = ServiceSkill()
-        service_skill.service_id = sid
-        service_skill.name = created_skill[0]
-        service_skill.inspection = created_skill[1]
-        dbsession.add(service_skill)
-        dbsession.commit()
+    for service_name, service_skills in skills.iteritems():
+        service = get_or_create_service(dbsession, service_name)
+        current_skills = set([
+            (skill['name'], skill['inspection'])
+            for skill in service_skills
+        ])
+        existing_skills_service = set([(existingskill.name, existingskill.inspection) for existingskill in existing_skills
+             if existingskill.id == service.id])
+        created_skills = current_skills - existing_skills_service
+        deleted_skills = existing_skills_service - current_skills
 
-        sp_skill = ServiceProviderSkill()
-        sp_skill.service_skill_id = service_skill.id
-        sp_skill.service_provider_id = spid
-        dbsession.add(sp_skill)
-    if deleted_skills:
+        for ssk in service_skills:
+            if ssk['name'] in skill_names:
+                skill_names.remove(ssk['name'])
+
+        for created_skill in created_skills:
+            try:
+                service_skill = dbsession.query(ServiceSkill).filter(
+                    ServiceSkill.name == created_skill[0],
+                    ServiceSkill.trash == False
+                ).one()
+            except Exception as ee:
+                print 'no skill present'
+                service_skill = ServiceSkill()
+                service_skill.service_id = service.id
+                service_skill.name = created_skill[0]
+                service_skill.inspection = created_skill[1]
+                dbsession.add(service_skill)
+                dbsession.commit()
+
+            sp_skill = ServiceProviderSkill()
+            sp_skill.service_skill_id = service_skill.id
+            sp_skill.service_provider_id = spid
+            dbsession.add(sp_skill)
+
+
+        if deleted_skills:
+            dbsession.query(ServiceProviderSkill).filter(
+                #ServiceSkill.service_provider_id == spid,
+                ServiceSkill.service_id == service.id,
+                ServiceSkill.name.in_([skill[0] for skill in deleted_skills]),
+                ServiceSkill.id == ServiceProviderSkill.service_skill_id
+            ).update({'trash': True}, synchronize_session=False)
+
+
+    if skill_names:
         dbsession.query(ServiceProviderSkill).filter(
-            #ServiceSkill.service_provider_id == spid,
-            ServiceSkill.service_id == sid,
-            ServiceSkill.name.in_([skill[0] for skill in deleted_skills]),
-            ServiceSkill.id == ServiceProviderSkill.service_skill_id
+            ServiceProviderSkill.service_provider_id == spid,
+            ServiceProviderSkill.service_skill_id == ServiceSkill.id,
+            ServiceSkill.name.in_(skill_names)
         ).update({'trash': True}, synchronize_session=False)
-        '''
-        dbsession.query(ServiceProviderSkill).filter(
-            ServiceProviderSkill.service_skill_id == sid
-        ).update({'trash':True}, synchronize_session=False)
-        '''
+
+
     dbsession.commit()
 
 
