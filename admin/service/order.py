@@ -162,9 +162,15 @@ def update_order_status(dbsession, oid, status):
         Orders.id == oid
     ).one()
 
-    order.status = status
-    dbsession.add(order)
-    dbsession.commit()
+    if order.status == status:
+        order.status = status
+        dbsession.add(order)
+        dbsession.commit()
+
+        tasks.post_order_update.apply_async(
+            (oid,),
+            queue=config.ORDER_QUEUE
+        )
     return order
 
 

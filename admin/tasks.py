@@ -179,32 +179,65 @@ def post_order_creation(self, spid, slot_start, order_id):
     order_email.send_email()
 
 @celery.task(name='admin.order.updated', base=DBTask, bind=True)
-def post_order_update(self, status_changed, order_id):
-    if status_changed:
-        order = self.db.query(Orders).filter(
-            Orders.id == order_id
-        ).one()
-        customer = self.db.query(BaseUser.name, BaseUser.email).filter(
-            ServiceUser.id == order.service_user_id,
-            BaseUser.id == ServiceUser.user_id
-        ).one()
-        #Sending email for order updated
-        #TODO integrate PAYU
-        if order.status == 'processing':
-            if order.service == 'laundry':
-                kwargs = {
-                    'details' : json.dumps(order.details),
-                    'template': 'laundry_picked',
-                    'service' : order.service,
-                    'link'    : 'link'
-                }
-        elif order.status == 'completed':
+def post_order_update(self, order_id):
+    order = self.db.query(Orders).filter(
+        Orders.id == order_id
+    ).one()
+    customer = self.db.query(BaseUser.name, BaseUser.email).filter(
+        ServiceUser.id == order.service_user_id,
+        BaseUser.id == ServiceUser.user_id
+    ).one()
+    #Sending email for order updated
+    #TODO integrate PAYU
+    send_email = False
+    if order.status == 'processing':
+        if order.service == 'laundry':
             kwargs = {
-                'template': 'feedback',
+                'details' : json.dumps(order.details),
+                'template': 'laundry_picked',
+                'service' : order.service,
+                'link'    : 'link'
+            }
+            send_email = True
+        elif order.service in ['plumber', 'electrician']:
+            sp = self.db.query(ServiceProvider).filter(
+                ServiceProvider.id == order.service_provider_id,
+                ServiceProvider.trash == False
+            )
+            kwargs = {
                 'service' : order.service,
                 'order_id': order_id,
-                'user_id' : order.service_user_id
-             }
+                'sp_name' : sp.name,
+                'details' : json.dumps(order.details),
+                'link'    : 'link',
+                'template': 'order_quote_others'
+            }
+            send_email = True
+    elif order.status == 'completed':
+        kwargs = {
+            'template': 'feedback',
+            'service' : order.service,
+            'order_id': order_id,
+            'user_id' : order.service_user_id
+         }
+        send_email = True
+    elif order.status == 'confirmed':
+        sp = self.db.query(ServiceProvider).filter(
+                ServiceProvider.id == order.service_provider_id,
+                ServiceProvider.trash == False
+            )
+        kwargs = {
+            'service' : order.service,
+            'order_id': order_id,
+            'sp_name' : sp.name,
+            'sp_image': sp.details['photo_link'] if sp.details and sp.detals.get('photo_link') else
+                        constants.DEFAULT_SP_IMAGE,
+            'template': 'order_assigned_others',
+            'sp_ph_no': sp.user.phone_number,
+            'experience': sp.experience
+        }
+        send_email = True
+    if send_email:
         order_email = email.OrderEmail(customer.email, customer.name, **kwargs)
         order_email.send_email()
 

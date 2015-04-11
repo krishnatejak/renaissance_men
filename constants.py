@@ -15,3 +15,5 @@ LAUNDRY_BILL_EMAIL_SUBJECT = 'Order has been picked up'
 FEEDBACK_SUBJECT = 'Order completed.'
 
 FEEDBACK_LINK = ""
+
+DEFAULT_SP_IMAGE = "https://s3-us-west-2.amazonaws.com/sevame/documents/sp.jpg"

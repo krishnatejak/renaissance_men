@@ -53,8 +53,8 @@ base_template = """
             </div>
             <div class="footerdiv" style="padding-top:2%">
                 <div style="float:left; width:30%">
-                    <span><a href="https://sevame.in/images/ignore/facebook.jpg"><img src="https://sevame.in/images/ignore/facebook.png"></a></span>
-                    <span><a href="https://sevame.in/images/ignore/twitter.jpg"><img src= "https://sevame.in/images/ignore/twitter.png"></a></span>
+                    <span><a href="https://sevame.in/images/ignore/facebook.jpg"><img src="https://sevame.in/images/ignore/facebook.jpg"></a></span>
+                    <span><a href="https://sevame.in/images/ignore/twitter.jpg"><img src= "https://sevame.in/images/ignore/twitter.jpg"></a></span>
                 </div>
                 <div style="float:right;  width:70%; color:#f0ad4e; text-align: right; padding-top:8px">
                     <span>
