@@ -258,8 +258,8 @@ def populate_schedules(self):
     date = (now + datetime.timedelta(days=3)).strftime('%m%d')
 
     # only next day slot should be created
+    pipeline = self.r.pipeline()
     for sp in service_providers:
-        pipeline = self.r.pipeline()
         key = 'schedule:{0}:{1}'.format(sp.id, date)
         slots = {
             str(slot): str(slot)

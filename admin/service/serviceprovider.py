@@ -183,6 +183,8 @@ def populate_service_provider_slots(dbsession, redis, spid,
         if not old_start and not old_end:
             raise AppException('Cannot update slots without original slots')
         # slots that should be originally present for sp
+        print 'old start %s old end %s' % (old_start, old_end)
+        print 'new start %s new end %s' % (sp.day_start, sp.day_end)
         original_slots = set(range(old_start, old_end + 1))
         # slots that should be present for sp now
         new_slots = set(range(sp.day_start, sp.day_end + 1))
