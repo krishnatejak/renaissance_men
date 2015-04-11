@@ -54,9 +54,13 @@ def create_service_provider(dbsession, data):
 
 @transaction
 def update_service_provider(dbsession, provider_id, data):
-	service_provider = dbsession.query(ServiceProvider).filter(
-		ServiceProvider.id == provider_id
-	).one()
+    service_provider = dbsession.query(ServiceProvider).filter(
+        ServiceProvider.id == provider_id
+    ).one()
+
+    old_start = service_provider.day_start
+    old_end = service_provider.day_end
+
     data['skills'] = clean_service_provider_skills(data['skills'])
 
     user = data.pop('user', {})
