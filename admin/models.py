@@ -2,11 +2,39 @@ from sqlalchemy import Column, Integer, String, Boolean, Float, ForeignKey
 from sqlalchemy import DateTime, Enum
 from sqlalchemy.dialects.postgres import ARRAY, JSON
 from sqlalchemy.orm import relationship, backref
+from sqlalchemy.ext.mutable import Mutable
 from datetime import datetime
 import db
 
 __all__ = ['ServiceProvider', 'Job', 'BaseUser', 'OrderRating', 'Signupemail',
            'ServiceUser', 'Orders', 'MissedOrders']
+
+
+class MutableDict(Mutable, dict):
+    @classmethod
+    def coerce(cls, key, value):
+        """Convert plain dictionaries to MutableDict."""
+
+        if not isinstance(value, MutableDict):
+            if isinstance(value, dict):
+                return MutableDict(value)
+
+            # this call will raise ValueError
+            return Mutable.coerce(key, value)
+        else:
+            return value
+
+    def __setitem__(self, key, value):
+        """Detect dictionary set events and emit change events."""
+
+        dict.__setitem__(self, key, value)
+        self.changed()
+
+    def __delitem__(self, key):
+        """Detect dictionary del events and emit change events."""
+
+        dict.__delitem__(self, key)
+        self.changed()
 
 
 class ServiceProvider(db.Base):
@@ -25,8 +53,8 @@ class ServiceProvider(db.Base):
     trash = Column("trash", Boolean, default=False)
     day_start = Column("day_start", Integer, default=96)
     day_end = Column("day_end", Integer, default=252)
-    details = Column("details", JSON(), default={})
-    skills = Column("skills", JSON(), default={})
+    details = Column("details", MutableDict.as_mutable(JSON), default={})
+    skills = Column("skills", MutableDict.as_mutable(JSON), default={})
     created = Column("created", DateTime(timezone=True), default=datetime.utcnow())
 
     class Meta(object):
@@ -134,7 +162,7 @@ class Orders(db.Base):
     service_user_id = Column("service_user_id", ForeignKey("service_user.id"))
     service_provider_id = Column("service_provider_id", ForeignKey("service_provider.id"))
     job_id = Column("job_id", ForeignKey("job.id"))
-    details = Column("details", JSON())
+    details = Column("details", MutableDict.as_mutable(JSON))
     location_permitted = Column("location_permitted", Boolean, default=False)
 
     class Meta(object):

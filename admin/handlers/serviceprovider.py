@@ -21,7 +21,7 @@ __all__ = ['ServiceProviderHandler', 'ServiceProviderJobHandler',
 class ServiceProviderHandler(BaseHandler):
     resource_name = 'serviceprovider'
     create_required = {'email', 'phone_number'}
-    update_ignored = {'service', 'id'}
+    update_ignored = {'service', 'id', 'created'}
 
     @handle_exceptions
     @allow('service_provider', base=True)
