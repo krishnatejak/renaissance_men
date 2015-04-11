@@ -7,6 +7,8 @@ from admin.templates.order_accepted_laundry import order_accepted_laundry
 from admin.templates.laundry_picked import table_data, laundry_picked
 from admin.templates.base_template import base_template
 from admin.templates.feedback_template import feedback_template
+from admin.templates.order_quote_others import order_quote_others
+from admin.templates.order_assigned_other import order_assigned_others
 
 from utils import calculate_hmac
 
@@ -74,6 +76,17 @@ class OrderEmail(EmailService):
             self.order_id = kwargs['order_id'],
             self.user_id = kwargs['user_id']
             subject = constants.FEEDBACK_SUBJECT
+        elif self.template == 'order_quote_others':
+            self.order_id = kwargs['order_id']
+            self.sp_name = kwargs['sp_name']
+            self.details = kwargs['details']
+            self.link = kwargs['link']
+        elif self.template == 'order_assigned_others':
+            self.order_id = kwargs['order_id']
+            self.sp_name = kwargs['sp_name'],
+            self.sp_name = kwargs['sp_image'],
+            self.sp_ph_no = kwargs['sp_ph_no'],
+            self.experience = kwargs['experience']
 
         super(OrderEmail, self).__init__(
                                             email=email,
@@ -118,5 +131,33 @@ class OrderEmail(EmailService):
                 order_id=self.order_id,
                 rating_link=constants.FEEDBACK_LINK,
                 order_identity=feedback_identifier
+            )
+        elif self.template == 'order_quote_others':
+            items = json.loads(self.details)['items']
+            html_table_data = ""
+            bill_amount = 0
+            for item in items:
+                html_table_data = html_table_data + table_data.format(
+                                                                item = item['name'],
+                                                                quantity = item['quantity'],
+                                                                amount = item['cost']
+                                                    )
+                bill_amount += int(item['cost'])
+            template_content = order_quote_others.format(
+                customer_name=self.first_name,
+                service=self.service,
+                order_id=self.order_id,
+                sp_name=self.sp_name,
+                table_data=html_table_data,
+                link=self.link
+            )
+        elif self.template == 'order_assigned_others':
+            template_content = order_assigned_others.format(
+                customer_name=self.first_name,
+                service=self.service,
+                order_id=self.order_id,
+                sp_name=self.sp_name,
+                sp_ph_no=self.sp_ph_no,
+                sp_experience=self.experience
             )
         self.html = base_template.format(template_content=template_content)
