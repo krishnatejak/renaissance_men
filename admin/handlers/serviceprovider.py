@@ -164,7 +164,7 @@ class AdminServiceProviderHandler(ServiceProviderHandler):
         if kwargs['pk']:
             kwargs['pk'] = kwargs['pk'].strip('/')
         service_provider = get_service_provider(self.dbsession, kwargs['pk'])
-        self.send_model_response(service_provider)
+        self.send_model_response(service_provider, follow=True)
 
     @allow('admin')
     def delete(self, *args, **kwargs):
