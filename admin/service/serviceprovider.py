@@ -39,7 +39,8 @@ def create_service_provider(dbsession, data):
     user = create_user(dbsession, user_data)
     service_provider = ServiceProvider()
     service_provider.user_id = user.id
-    data['skills'] = clean_service_provider_skills(data['skills'])
+    if 'skills' in data:
+        data['skills'] = clean_service_provider_skills(data['skills'])
     update_model_from_dict(service_provider, data)
     dbsession.add(service_provider)
 
