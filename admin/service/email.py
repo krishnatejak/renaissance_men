@@ -81,12 +81,14 @@ class OrderEmail(EmailService):
             self.sp_name = kwargs['sp_name']
             self.details = kwargs['details']
             self.link = kwargs['link']
+            subject = constants.QUOTE_OTHERS.format(self.service, self.order_id)
         elif self.template == 'order_assigned_others':
             self.order_id = kwargs['order_id']
-            self.sp_name = kwargs['sp_name'],
-            self.sp_name = kwargs['sp_image'],
+            self.sp_name = str(kwargs['sp_name']),
+            self.sp_image = kwargs['sp_image'],
             self.sp_ph_no = kwargs['sp_ph_no'],
             self.experience = kwargs['experience']
+            subject = constants.SP_ASSIGNED.format(self.sp_name, self.service)
 
         super(OrderEmail, self).__init__(
                                             email=email,
@@ -158,6 +160,7 @@ class OrderEmail(EmailService):
                 order_id=self.order_id,
                 sp_name=self.sp_name,
                 sp_ph_no=self.sp_ph_no,
-                sp_experience=self.experience
+                sp_experience=self.experience,
+                sp_image=self.sp_image
             )
         self.html = base_template.format(template_content=template_content)
