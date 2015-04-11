@@ -23,7 +23,6 @@ def get_available_slots(redis, service):
                 "schedule_end_at": get_datetime_for_slot(slot + duration,
                                                          base_datetime)
             })
-
         if day == 0:
             sp_list = redis.zrangebyscore(
                 "{0}:availability:sps".format(service), 1, 1
@@ -41,7 +40,7 @@ def get_available_slots(redis, service):
             available = redis.zcard('free_slots') > 0
             free_slots = redis.zrange('free_slots', 0, -1)
             if day == 0:
-                interval = (now.hour * 60 + now.minute)/5 + 24
+                interval = (now.hour * 60 + now.minute)/5 + 36
                 free_slots = [
                     int(free_slot)/duration for free_slot in
                     free_slots

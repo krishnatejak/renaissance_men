@@ -19,6 +19,7 @@ CHARACTER_POOL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890
 
 JSON_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
 
+EPOCH_DATE_TIME = datetime.datetime(1970, 1, 1)
 
 def is_aware(value):
     """
@@ -39,14 +40,15 @@ class TornadoJSONEncoder(json.JSONEncoder):
     def default(self, o):
         # See "Date Time String Format" in the ECMA-262 specification.
         if isinstance(o, datetime.datetime):
-            '''
+            """
             r = o.isoformat()
             if o.microsecond:
                 r = r[:23] + r[26:]
             if r.endswith('+00:00'):
                 r = r[:-6] + 'Z'
-            '''
-            return o.strftime('%s')
+            return r
+            """
+            return (o - EPOCH_DATE_TIME).total_seconds()
         elif isinstance(o, datetime.date):
             #return o.isoformat()
             return o.strftime('%s')
