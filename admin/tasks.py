@@ -122,10 +122,12 @@ def verify_user_phone(self, uid):
     hotp = pyotp.HOTP(config.OTP_SECRET)
     otp = hotp.at(count)
 
-    otp_sms = Sms(
-        user.phone_number,
-        "OTP for registration with Sevame is " + str(otp)
-    )
+    kwargs = {
+        "to_number": str(user.phone_number),
+        "body": "OTP for registration with Sevame is " + str(otp)
+    }
+
+    otp_sms = Sms(**kwargs)
     otp_sms.send_sms()
 
 @celery.task(name='admin.order.created', base=DBTask, bind=True)
