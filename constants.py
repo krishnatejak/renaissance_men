@@ -17,6 +17,8 @@ SUPPORT_EMAIL_ADDRESS = 'contact@sevame.in'
 ORDER_ACCEPTED_SUBJECT = 'Order has been successfully placed.'
 LAUNDRY_BILL_EMAIL_SUBJECT = 'Order has been picked up'
 FEEDBACK_SUBJECT = 'Order completed.'
+QUOTE_OTHERS = 'Quote Estimate for {0} Order No {1}'
+SP_ASSIGNED = '{0}, {1} is on his way.'
 
 FEEDBACK_LINK = ""
 

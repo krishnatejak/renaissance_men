@@ -203,11 +203,11 @@ def post_order_update(self, order_id):
             sp = self.db.query(ServiceProvider).filter(
                 ServiceProvider.id == order.service_provider_id,
                 ServiceProvider.trash == False
-            )
+            ).one()
             kwargs = {
                 'service' : order.service,
                 'order_id': order_id,
-                'sp_name' : sp.name,
+                'sp_name' : str(sp.user.name),
                 'details' : json.dumps(order.details),
                 'link'    : 'link',
                 'template': 'order_quote_others'
@@ -225,17 +225,18 @@ def post_order_update(self, order_id):
         sp = self.db.query(ServiceProvider).filter(
                 ServiceProvider.id == order.service_provider_id,
                 ServiceProvider.trash == False
-            )
+            ).one()
         kwargs = {
             'service' : order.service,
             'order_id': order_id,
-            'sp_name' : sp.name,
+            'sp_name' : str(sp.user.name),
             'sp_image': sp.details['photo_link'] if sp.details and sp.detals.get('photo_link') else
                         constants.DEFAULT_SP_IMAGE,
             'template': 'order_assigned_others',
-            'sp_ph_no': sp.user.phone_number,
+            'sp_ph_no': str(sp.user.phone_number),
             'experience': sp.experience
         }
+
         send_email = True
     if send_email:
         order_email = email.OrderEmail(customer.email, customer.name, **kwargs)
