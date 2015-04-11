@@ -1,12 +1,11 @@
-
 from admin.models import *
 from admin import tasks
-from admin.service.service import *
 from admin.service.user import create_user
 from utils import transaction, update_model_from_dict
 from exc import AppException
 import config
 import constants
+import datetime
 
 
 __all__ = ['update_service_provider', 'get_service_provider',
@@ -47,20 +46,22 @@ def create_service_provider(dbsession, data):
 
     tasks.update_service_provider.apply_async(
         args=(service_provider.id,),
+        kwargs={'created': True, 'old_start': 0, 'old_end': 0},
         queue=config.SERVICE_PROVIDER_QUEUE
     )
     return service_provider
 
 @transaction
-def update_service_provider(dbsession, provider_id, data):
-    if provider_id:
-        service_provider = dbsession.query(ServiceProvider).filter(
-            ServiceProvider.id == provider_id
-        ).one()
-    else:
-        raise AppException('Please provide a service provider id')
+def update_service_provider(dbsession, spid, data):
+    service_provider = dbsession.query(ServiceProvider).filter(
+        ServiceProvider.id == spid
+    ).one()
 
     data['skills'] = clean_service_provider_skills(data['skills'])
+    print data
+    data.pop('user', None)
+    old_start = service_provider.day_start
+    old_end = service_provider.day_end
     update_model_from_dict(service_provider, data)
     dbsession.add(service_provider)
 
@@ -68,6 +69,7 @@ def update_service_provider(dbsession, provider_id, data):
 
     tasks.update_service_provider.apply_async(
         args=(service_provider.id,),
+        kwargs={'created': False, 'old_start': old_start, 'old_end': old_end},
         queue=config.SERVICE_PROVIDER_QUEUE
     )
     return service_provider
@@ -110,108 +112,6 @@ def delete_service_provider(dbsession, provider_id):
     return True
 
 
-def update_skills(dbsession, spid, skills):
-    '''
-    current_skills = set([
-        (skill['name'], skill['inspection'])
-        for skill in skills
-    ])
-    '''
-    existing_skills = dbsession.query(
-        ServiceSkill.name, ServiceSkill.inspection, Service.id
-    ).filter(
-        ServiceProviderSkill.service_provider_id == spid,
-        ServiceSkill.id == ServiceProviderSkill.service_skill_id,
-        ServiceSkill.trash == False,
-        ServiceSkill.service_id == Service.id,
-        ServiceProviderSkill.trash == False
-    ).all()
-
-    skill_names = [esk.name for esk in existing_skills]
-
-    for service_name, service_skills in skills.iteritems():
-        service = get_or_create_service(dbsession, service_name)
-        current_skills = set([
-            (skill['name'], skill['inspection'])
-            for skill in service_skills
-        ])
-        existing_skills_service = set([(existingskill.name, existingskill.inspection) for existingskill in existing_skills
-             if existingskill.id == service.id])
-        created_skills = current_skills - existing_skills_service
-        deleted_skills = existing_skills_service - current_skills
-
-        for ssk in service_skills:
-            if ssk['name'] in skill_names:
-                skill_names.remove(ssk['name'])
-
-        for created_skill in created_skills:
-            try:
-                service_skill = dbsession.query(ServiceSkill).filter(
-                    ServiceSkill.name == created_skill[0],
-                    ServiceSkill.trash == False
-                ).one()
-            except Exception as ee:
-                service_skill = ServiceSkill()
-                service_skill.service_id = service.id
-                service_skill.name = created_skill[0]
-                service_skill.inspection = created_skill[1]
-                dbsession.add(service_skill)
-
-            sp_skill = ServiceProviderSkill()
-            sp_skill.service_skill_id = service_skill.id
-            sp_skill.service_provider_id = spid
-            dbsession.add(sp_skill)
-
-
-        if deleted_skills:
-            dbsession.query(ServiceProviderSkill).filter(
-                #ServiceSkill.service_provider_id == spid,
-                ServiceSkill.service_id == service.id,
-                ServiceSkill.name.in_([skill[0] for skill in deleted_skills]),
-                ServiceSkill.id == ServiceProviderSkill.service_skill_id
-            ).update({'trash': True}, synchronize_session=False)
-
-
-    if skill_names:
-        dbsession.query(ServiceProviderSkill).filter(
-            ServiceProviderSkill.service_provider_id == spid,
-            ServiceProviderSkill.service_skill_id == ServiceSkill.id,
-            ServiceSkill.name.in_(skill_names)
-        ).update({'trash': True}, synchronize_session=False)
-
-
-    dbsession.commit()
-
-
-def get_service_provider_skills(dbsession, spid):
-    service_provider = dbsession.query(ServiceProvider).filter(
-                                    ServiceProvider.id == spid,
-                                ).one()
-
-    sp_skills = dbsession.query(ServiceProviderSkill).filter(
-                                    ServiceProviderSkill.service_provider_id == spid,
-                                    ServiceProviderSkill.trash == False
-                                ).all()
-
-    sp_skill_ids = [sp_skill.service_skill_id for sp_skill in sp_skills]
-
-    service_skills = {}
-    for skill in service_provider.skills:
-        if skill.id in sp_skill_ids:
-            service_name = get_service_name(dbsession, skill.service_id)
-            if service_name in service_skills:
-                service_skills[service_name].append({
-                    'name': skill.name,
-                    'inspection': skill.inspection
-                })
-            else:
-                service_skills[service_name] = [{
-                    'name': skill.name,
-                    'inspection': skill.inspection
-                }]
-    return service_skills
-
-
 def fetch_jobs_by_status(dbsession, spid, status):
     status = status.strip()
     jobs = dbsession.query(Job).filter(
@@ -232,3 +132,75 @@ def get_sp_for_phone_number(dbsession, phone_number):
         ServiceProvider.user_id == BaseUser.id
     ).one()
     return service_provider
+
+
+def populate_service_provider_slots(dbsession, redis, spid,
+                                    old_start=None, old_end=None, created=False):
+    """populates service provider schedule slots in redis"""
+    sp = dbsession.query(ServiceProvider).filter(
+        ServiceProvider.id == spid,
+        ServiceProvider.trash == False
+    ).one()
+    now = datetime.datetime.now()
+
+    slot_day_start = 0
+    if now.hour > constants.SLOT_DAY_END_HOUR:
+        slot_day_start = 1
+    slot_day_end = constants.SLOT_NO_OF_DAYS
+    if now.hour > constants.SLOT_DAY_END_HOUR:
+        slot_day_end = constants.SLOT_NO_OF_DAYS + 1
+
+    if created:
+        pipeline = redis.pipeline()
+
+        for i in range(slot_day_start, slot_day_end):
+            start = sp.day_start
+            end = sp.day_end
+
+            if i == 0:
+                current_start = (now.hour * 60 + now.minute)/5
+                if current_start > sp.day_start:
+                    start = current_start
+
+            slots_schedule = {
+                str(slot): str(slot)
+                for slot in range(start, end + 1)
+            }
+            date = (now + datetime.timedelta(days=i)).strftime('%m%d')
+            key = 'schedule:{0}:{1}'.format(sp.id, date)
+            # delete key
+            pipeline.delete(key)
+            # add created slots
+            pipeline.zadd(key, **slots_schedule)
+        pipeline.execute()
+    else:
+        if not old_start and not old_end:
+            raise AppException('Cannot update slots without original slots')
+        # slots that should be originally present for sp
+        original_slots = set(range(old_start, old_end + 1))
+        # slots that should be present for sp now
+        new_slots = set(range(sp.day_start, sp.day_end + 1))
+        # slots present now that are not present originally
+        missing_slots = new_slots - original_slots
+        print 'missing_slots %s' % missing_slots
+        pipeline = redis.pipeline()
+        for i in range(slot_day_start, slot_day_end):
+            date = (now + datetime.timedelta(days=i)).strftime('%m%d')
+            key = 'schedule:{0}:{1}'.format(sp.id, date)
+            # slots for sp remaining in that day (missing slots
+            # can be expired or booked)
+            actual_slots = set(redis.zrangebyscore(key, 0, 289))
+            # slots remaining for sp from original slots
+            booked_slots = original_slots - actual_slots
+            print 'booked_slots %s' % booked_slots
+            # slots that needs to be added for sp
+            added_slots = missing_slots - booked_slots
+            print 'slots to be added %s' % added_slots
+            if added_slots:
+                print 'found added slots %s' % added_slots
+                slots = {str(slot): str(slot) for slot in added_slots}
+                pipeline.zadd(key, **slots)
+            # remove all other slots
+            pipeline.zremrangebyscore(key, 0, sp.day_start - 1)
+            pipeline.zremrangebyscore(key, sp.day_end + 1, 289)
+        pipeline.execute()

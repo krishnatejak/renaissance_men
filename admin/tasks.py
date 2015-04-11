@@ -33,44 +33,64 @@ def add_service_provider(self, spid):
     self.r.hmset("sp:{0}".format(service_provider.id), sp_dict)
 
 
-
 @celery.task(name='admin.serviceprovider.update', base=DBTask, bind=True)
-def update_service_provider(self, spid):
-    service_provider = self.db.query(ServiceProvider).filter(
+def update_service_provider(self, spid, old_start=None, old_end=None, created=False):
+    from admin.service.serviceprovider import populate_service_provider_slots
+
+    sp = self.db.query(ServiceProvider).filter(
         ServiceProvider.id == spid,
         ServiceProvider.trash == False
     ).one()
 
-    service_skills = service_provider.skills
+    service_skills = sp.skills
     # populate redis entries
     for service, skills in service_skills.iteritems():
         # add service provider to <service>:providers set
         self.r.sadd("service:{0}:sp".format(service), spid)
-        skill_names = [skill['name'] for skill in skills]
-        # TODO handle deleted skills
-        # add service provider service skills to sp:<id>:<service>:skills set
-        self.r.sadd("sp:{0}:{1}:skills".format(spid, service), *skill_names)
 
-        # TODO handle availability
-        availability = 1 if service_provider.availability else 0
+        # update service provider service skills sp:<id>:<service>:skills
+        current_skills = set([skill['name'] for skill in skills])
+        existing_skills = self.r.smembers(
+            "sp:{0}:{1}:skills".format(spid, service)
+        )
+        deleted_skills = list(existing_skills - current_skills)
+        if deleted_skills:
+            print 'deleted skills %s' % deleted_skills
+            self.r.srem(
+                "sp:{0}:{1}:skills".format(spid, service),
+                *deleted_skills
+            )
+        added_skills = list(current_skills - existing_skills)
+        if added_skills:
+            print 'added skills %s' % added_skills
+            self.r.sadd(
+                "sp:{0}:{1}:skills".format(spid, service),
+                *added_skills
+            )
+        # update availability in <service>:availability:sps
+        availability = 1 if sp.availability else 0
         kwargs = {str(spid): availability}
         self.r.zadd(
             "{0}:availability:sps".format(service),
             **kwargs
         )
-    # TODO handle service provider details update
+
+    # update service provider data in sp:<id>
     sp_dict = {
-        "name": service_provider.base_user.name,
-        "availability": service_provider.availability,
-        "phone_number": service_provider.base_user.phone_number,
-        "home_location": service_provider.home_location,
-        "office_location": service_provider.office_location,
-        "service_range": service_provider.service_range
+        "name": sp.user.name,
+        "availability": sp.availability,
+        "phone_number": sp.user.phone_number,
+        "home_location": sp.home_location,
+        "office_location": sp.office_location,
+        "service_range": sp.service_range
         }
-    self.r.hmset("sp:{0}".format(service_provider.id), sp_dict)
+    self.r.hmset("sp:{0}".format(sp.id), sp_dict)
 
-    # TODO update slots for service provider
-
+    # update schedule slots in schedule:<id>:<mmdd>
+    populate_service_provider_slots(
+        self.db, self.r, spid,
+        created=created, old_start=old_start, old_end=old_end
+    )
 
 @celery.task(name='admin.serviceprovider.delete', base=DBTask, bind=True)
 def delete_service_provider(self, spid):
@@ -214,72 +234,11 @@ def job_accepted(self, jid):
 def user_create(uid):
     pass
 
-@celery.task(name='admin.service.add', base=DBTask, bind=True)
-def add_service(self, sid):
-    service = self.db.query(Service).filter(Service.id == sid).first()
-
-    self.r.sadd('services', service.name)
-
-    for skill in service.skills:
-        self.r.sadd("{0}:skills".format(service.name), skill.name)
 
 @celery.task(name='admin.add.all', base=DBTask, bind=True)
 def admin_add_all(self):
-    services = self.db.query(Service).filter(Service.trash == False).all()
+    pass
 
-    self.r.delete("services")
-    for service in services:
-        self.r.delete("{0}.providers".format(service.name))
-        self.r.delete("{0}.skills".format(service.name))
-
-        self.r.sadd('services', service.name)
-
-        for skill in service.skills:
-            self.r.sadd("{0}:skills".format(service.name), skill.name)
-
-    service_providers = self.db.query(ServiceProvider).filter(ServiceProvider.trash == False).all()
-
-    for service_provider in service_providers:
-        sp_skills = self.db.query(ServiceProviderSkill).filter(
-                                    ServiceProviderSkill.service_provider_id == service_provider.id,
-                                    ServiceProviderSkill.trash == False
-                                ).all()
-        base_user = self.db.query(BaseUser).filter(
-            BaseUser.id == service_provider.user_id
-        ).one()
-        sp_skill_ids = [sp_skill.service_skill_id for sp_skill in sp_skills]
-
-        skills = service_provider.skills
-
-        for skill in skills:
-            service_name = skill.service.name
-            self.r.sadd("{0}:providers".format(service_name), service_provider.id)
-            if skill.id in sp_skill_ids:
-                self.r.sadd("sp:{0}:{1}:skills".format(service_provider.id, service_name), skill.name)
-
-            self.r.sadd("services:{0}:sps".format(service_name), service_provider.id)
-            self.r.sadd("sp:{0}:availability".format(service_name), service_provider.id)
-            #####
-            # Service availability service providers:
-            #   Saving the Service Provider id with score as 1 for available and 0 for not available
-            #####
-            #Todo Delete this when service provider is deleted
-            self.r.zadd(
-                "{0}:availability:sps".format(skill.service.name),
-                **{str(service_provider.id): 1 if service_provider.availability else 0}
-            )
-
-        sp_dict = {
-            "name":base_user.name,
-            "availability":service_provider.availability,
-            "phone_number":base_user.phone_number,
-            "home_location":service_provider.home_location,
-            "office_location":service_provider.office_location,
-            "service_range":service_provider.service_range
-        }
-
-        self.r.delete("sp:{0}".format(service_provider.id))
-        self.r.hmset("sp:{0}".format(service_provider.id), sp_dict)
 
 @celery.task(name='admin.notify.gcm')
 def admin_notify_gcm(msg, *gcm_reg_ids):
@@ -290,22 +249,22 @@ def admin_notify_gcm(msg, *gcm_reg_ids):
 
 @celery.task(name='admin.scheduler.populate', base=DBTask, bind=True)
 def populate_schedules(self):
-    now = datetime.datetime.now()
-
     service_providers = self.db.query(ServiceProvider).filter(
         ServiceProvider.trash == False
     ).all()
-    for sp in service_providers:
-        if not sp.day_end or not sp.day_end:
-            continue
+    now = datetime.datetime.now()
+    date = (now + datetime.timedelta(days=3)).strftime('%m%d')
 
-        for i in range(constants.SLOT_NO_OF_DAYS):
-            date = (now + datetime.timedelta(days=i+1)).strftime('%m%d')
-            if not self.r.zcard('schedule:{0}:{1}'.format(sp.id, date)):
-                kwargs = {}
-                for time in range(sp.day_start, sp.day_end):
-                    kwargs[str(time)] = str(time)
-                self.r.zadd('schedule:{0}:{1}'.format(sp.id, date), **kwargs)
+    # only next day slot should be created
+    for sp in service_providers:
+        pipeline = self.r.pipeline()
+        key = 'schedule:{0}:{1}'.format(sp.id, date)
+        slots = {
+            str(slot): str(slot)
+            for slot in range(sp.day_start, sp.day_end + 1)
+        }
+        pipeline.zadd(key, **slots)
+    pipeline.execute()
 
 
 @celery.task(name='admin.scheduler.clean', base=DBTask, bind=True)

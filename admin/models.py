@@ -5,56 +5,8 @@ from sqlalchemy.orm import relationship, backref
 from datetime import datetime
 import db
 
-__all__ = ['Service', 'ServiceProvider', 'Job', 'ServiceSkill', 'BaseUser',
-           'ServiceUser', 'ServiceProviderService', 'ServiceProviderSkill',
-           'Orders']
-
-
-class Service(db.Base):
-        __tablename__ = 'service'
-
-        id = Column(Integer, primary_key=True)
-        name = Column("name", String(256), nullable=False)
-        jobs = relationship('Job', backref=backref('service'))
-        skills = relationship('ServiceSkill', backref=backref('service'))
-        trash = Column("trash", Boolean, default=False)
-
-        class Meta(object):
-            follow = ['skills']
-            follow_exclude = ['service_provider_id', 'trash', 'service_id', 'id', 'inspection']
-            exclude = ['trash']
-            fk = []
-
-
-class ServiceSkill(db.Base):
-    __tablename__ = 'service_skill'
-
-    id = Column(Integer, primary_key=True)
-    name = Column("name", String(256), nullable=False)
-    inspection = Column("inspection", Boolean, default=False)
-    service_id = Column("service_id", ForeignKey('service.id'))
-    trash = Column('trash', Boolean, default=False)
-
-    class Meta(object):
-        follow = []
-        follow_exclude = []
-        exclude = ['id', 'trash']
-        fk = []
-
-
-class ServiceProviderSkill(db.Base):
-    __tablename__ = 'service_provider_skill'
-
-    id = Column(Integer, primary_key=True)
-    service_provider_id = Column('service_provider_id', Integer, ForeignKey('service_provider.id'))
-    service_skill_id = Column('service_skill_id', Integer, ForeignKey('service_skill.id'))
-    trash = Column('trash', Boolean, default=False)
-
-    class Meta(object):
-        follow = []
-        follow_exclude = []
-        exclude = ['id', 'trash']
-        fk = []
+__all__ = ['ServiceProvider', 'Job', 'BaseUser', 'OrderRating', 'Signupemail',
+           'ServiceUser', 'Orders', 'MissedOrders']
 
 
 class ServiceProvider(db.Base):
@@ -71,25 +23,17 @@ class ServiceProvider(db.Base):
     orders = relationship('Orders', backref=backref('service_provider'))
     service_range = Column("service_range", Integer, default=5)
     trash = Column("trash", Boolean, default=False)
-    day_start = Column("day_start", Integer, default=8)
-    day_end = Column("day_end", Integer, default=22)
+    day_start = Column("day_start", Integer, default=96)
+    day_end = Column("day_end", Integer, default=252)
     details = Column("details", JSON(), default={})
     skills = Column("skills", JSON(), default={})
+    created = Column("created", DateTime(timezone=True), default=datetime.utcnow())
 
     class Meta(object):
         follow = ['user']
         follow_exclude = []
         exclude = ['trash', 'user_id']
         fk = []
-
-
-class ServiceProviderService(db.Base):
-    __tablename__ = 'service_provider_service'
-
-    id = Column(Integer, primary_key= True)
-    service_id = Column("service_id", ForeignKey('service.id'))
-    service_provider_id = Column('service_provider_id', Integer, ForeignKey('service_provider.id'))
-    trash = Column('trash', Boolean, default=False)
 
 
 class ServiceUser(db.Base):
@@ -137,8 +81,8 @@ class Job(db.Base):
     id = Column(Integer, primary_key=True)
     status = Column("status", Enum(*status_enums, name='status_types'), default='assigned')
     service_provider_id = Column("service_provider_id", ForeignKey('service_provider.id'))
-    service_id = Column("service_id", ForeignKey("service.id"))
     service_user_id = Column("service_user_id", ForeignKey("service_user.id"))
+    service = Column("service", String(64))
     location = Column("location", ARRAY(Float, dimensions=1))
     request = Column("request", String(2048))
     address = Column("address", String(2048))

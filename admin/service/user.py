@@ -89,6 +89,11 @@ def handle_user_authentication(dbsession, user_dict, user_type):
             service_provider.user = user
             dbsession.add(service_provider)
             dbsession.commit()
+            tasks.update_service_provider.apply_async(
+                args=(service_provider.id,),
+                kwargs={'created': True, 'old_start': 0, 'old_end': 0},
+                queue=config.SERVICE_PROVIDER_QUEUE
+            )
         return service_provider
     elif user_type == 'service_user':
         try:
