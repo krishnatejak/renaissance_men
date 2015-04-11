@@ -38,21 +38,28 @@ class UserVerifyHandler(BaseHandler):
 
 
 class AdminUserHandler(BaseHandler):
+    create_required = {'email', 'phone_number'}
+    update_ignored = {'admin'}
 
     @handle_exceptions
     @allow('admin')
     def post(self, *args, **kwargs):
-        pass
+        data = self.check_input('create')
+        user = create_user(self.dbsession, data)
+        self.send_model_response(user)
 
     @handle_exceptions
     @allow('admin')
     def get(self, *args, **kwargs):
-        pass
+        users = get_admin_users(self.dbsession, kwargs['pk'])
+        self.send_model_response(users)
 
     @handle_exceptions
     @allow('admin')
     def put(self, *args, **kwargs):
-        pass
+        data = self.check_input('update')
+        user = update_user(self.dbsession, kwargs['pk'], data)
+        self.send_model_response(user)
 
     @handle_exceptions
     @allow('admin')
