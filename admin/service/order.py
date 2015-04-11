@@ -162,7 +162,7 @@ def update_order_status(dbsession, oid, status):
         Orders.id == oid
     ).one()
 
-    if order.status == status:
+    if order.status != status:
         order.status = status
         dbsession.add(order)
         dbsession.commit()
