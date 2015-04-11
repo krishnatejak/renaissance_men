@@ -120,13 +120,7 @@ class ServiceProviderUploadHandler(BaseHandler):
                 response, response_data = response_dict[document_type]
                 upload_details[document_type + '_link'] = response.effective_url
 
-            sp_details = service_provider.details
-            if sp_details is None:
-                sp_details = upload_details
-            else:
-                sp_details.update(**upload_details)
-
-            service_provider.details = sp_details
+            service_provider.details.update(**upload_details)
             self.dbsession.add(service_provider)
             self.dbsession.commit()
 
