@@ -1,20 +1,20 @@
 import datetime
 
-import pytz
-
 import constants
 from utils import parse_datetime
 from exc import AssignmentException
 
+
 def get_available_slots(redis, service):
     now = datetime.datetime.now()
+    base_datetime = datetime.datetime(now.year, now.month, now.day)
+    base_datetime = constants.IST_TIMEZONE.localize(base_datetime)
     available_slots = []
     # if after 10 PM don't show today's slot
     start = 1 if now.hour > constants.SLOT_DAY_END_HOUR else 0
     for day in range(start, constants.SLOT_NO_OF_DAYS):
         time_slots = []
         duration = constants.SLOT_DEFAULT_DURATION[service] / 5
-        base_datetime = datetime.datetime(now.year, now.month, now.day)
         base_datetime = base_datetime + datetime.timedelta(days=day)
         for slot in range(0, 288, duration):
             time_slots.append({

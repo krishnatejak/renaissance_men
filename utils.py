@@ -6,11 +6,11 @@ import hmac
 import hashlib
 
 from sqlalchemy.orm.query import Query
-from tornado.web import authenticated
 from tornado.web import HTTPError
 from functools import wraps
 
-from config import COOKIE_SECRET
+import config
+import constants
 import db
 
 from exc import AppException
@@ -19,7 +19,8 @@ CHARACTER_POOL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890
 
 JSON_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
 
-EPOCH_DATE_TIME = datetime.datetime(1970, 1, 1)
+EPOCH_DATE_TIME = constants.GMT_TIMEZONE.localize(datetime.datetime(1970, 1, 1))
+
 
 def is_aware(value):
     """
@@ -48,6 +49,7 @@ class TornadoJSONEncoder(json.JSONEncoder):
                 r = r[:-6] + 'Z'
             return r
             """
+
             return (o - EPOCH_DATE_TIME).total_seconds()
         elif isinstance(o, datetime.date):
             #return o.isoformat()
@@ -205,4 +207,4 @@ def allow(*user_types, **basekw):
 
     return validate
 def calculate_hmac(message):
-    return hmac.new(COOKIE_SECRET, msg=message, digestmod=hashlib.sha256).digest()
+    return hmac.new(config.COOKIE_SECRET, msg=message, digestmod=hashlib.sha256).digest()

@@ -1,3 +1,7 @@
+import pytz
+IST_TIMEZONE = pytz.timezone('Asia/Kolkata')
+GMT_TIMEZONE = pytz.utc
+
 ALLOWED_SERVICES = ('laundry', 'plumber', 'electrician', 'cook')
 SLOT_NO_OF_DAYS = 3
 SLOT_DAY_END_HOUR = 19
