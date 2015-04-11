@@ -166,7 +166,7 @@ class Orders(db.Base):
     location_permitted = Column("location_permitted", Boolean, default=False)
 
     class Meta(object):
-        follow = []
+        follow = ['service_provider', 'service_user']
         follow_exclude = []
         exclude = []
         fk = []

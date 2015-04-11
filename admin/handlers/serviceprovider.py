@@ -1,7 +1,4 @@
-import json
-
 from exc import handle_exceptions
-from utils import model_to_dict, TornadoJSONEncoder
 from utils import allow
 from admin.handlers.common import BaseHandler
 from admin.service.serviceprovider import *
@@ -9,7 +6,6 @@ from admin.service.order import get_sp_orders_by_status
 from tornado.gen import coroutine
 import tornado.httpclient
 import tornado.web
-from sqlalchemy.orm.query import Query
 
 
 from botocore_tornado import session as botosession
@@ -30,28 +26,13 @@ class ServiceProviderHandler(BaseHandler):
         service_provider = update_service_provider(
             self.dbsession, kwargs['pk'], data
         )
-        self.send_model_response(service_provider)
+        self.send_model_response(service_provider, follow=True)
 
     @handle_exceptions
     @allow('service_provider', base=True)
     def get(self, *args, **kwargs):
         service_provider = get_service_provider(self.dbsession, kwargs['pk'])
-        self.send_model_response(service_provider)
-
-    def send_model_response(self, instance_or_query):
-        uri_kwargs = {
-            'resource_name': self.resource_name
-        }
-        models_dict = model_to_dict(
-            instance_or_query,
-            self.model_response_uris,
-            uri_kwargs
-        )
-
-        self.set_status(200)
-        self.set_header("Content-Type", "application/json")
-        self.write(json.dumps(models_dict, cls=TornadoJSONEncoder))
-        self.finish()
+        self.send_model_response(service_provider, follow=True)
 
 
 class ServiceProviderJobHandler(BaseHandler):
@@ -65,7 +46,7 @@ class ServiceProviderJobHandler(BaseHandler):
 
 
 class ServiceProviderOrdersHandler(BaseHandler):
-
+    #TODO evaluate if follow is required for this api
     @handle_exceptions
     @allow('service_provider', base=True)
     def get(self, *args, **kwargs):
@@ -122,7 +103,7 @@ class ServiceProviderUploadHandler(BaseHandler):
             self.dbsession.add(service_provider)
             self.dbsession.commit()
 
-            self.send_model_response(service_provider)
+            self.send_model_response(service_provider, follow=True)
 
         except tornado.httpclient.HTTPError as e:
             print 'upload failed %s' % e
@@ -167,7 +148,7 @@ class AdminServiceProviderHandler(ServiceProviderHandler):
     def post(self, *args, **kwargs):
         data = self.check_input('create')
         service_provider = create_service_provider(self.dbsession, data)
-        self.send_model_response(service_provider)
+        self.send_model_response(service_provider, follow=True)
 
     @handle_exceptions
     @allow('admin')
@@ -176,7 +157,7 @@ class AdminServiceProviderHandler(ServiceProviderHandler):
         service_provider = update_service_provider(
             self.dbsession, kwargs['pk'], data
         )
-        self.send_model_response(service_provider)
+        self.send_model_response(service_provider, follow=True)
 
     @allow('admin', allow_list=True)
     def get(self, *args, **kwargs):

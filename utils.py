@@ -90,7 +90,7 @@ def update_model_from_dict(model_instance, value_dict):
             setattr(model_instance, key, value)
 
 
-def model_to_dict(instance_or_query, response_uris, uri_kwargs):
+def model_to_dict(instance_or_query, response_uris, uri_kwargs, follow=False):
     if isinstance(instance_or_query, Query):
         models_list = []
         response_dict = {
@@ -98,35 +98,28 @@ def model_to_dict(instance_or_query, response_uris, uri_kwargs):
             'objects': models_list
         }
         for instance in instance_or_query:
-            models_dict = instance.asdict(
-                exclude=instance.Meta.exclude + instance.Meta.fk,
-                follow={
+            dict_meta = {
+                'exclude': instance.Meta.exclude + instance.Meta.fk
+            }
+            if follow:
+                dict_meta['follow'] = {
                     e: dict(exclude=instance.Meta.follow_exclude)
                     for e in instance.Meta.follow
                 }
-            )
-            #uri_kwargs['id'] = instance.id
-            #model_urls = {
-            #    k: v.format(**uri_kwargs)
-            #    for k, v in response_uris.iteritems()
-            #}
-            #models_dict['urls'] = model_urls
+
+            models_dict = instance.asdict(**dict_meta)
             models_list.append(models_dict)
         return response_dict
     elif isinstance(instance_or_query, db.Base):
-        models_dict = instance_or_query.asdict(
-            exclude=instance_or_query.Meta.exclude + instance_or_query.Meta.fk,
-            follow={
+        dict_meta = {
+            'exclude': instance_or_query.Meta.exclude + instance_or_query.Meta.fk
+        }
+        if follow:
+            dict_meta['follow'] = {
                 e: dict(exclude=instance_or_query.Meta.follow_exclude)
                 for e in instance_or_query.Meta.follow
             }
-        )
-        #uri_kwargs['id'] = instance_or_query.id
-        #model_urls = {
-        #    k: v.format(**uri_kwargs)
-        #    for k, v in response_uris.iteritems()
-        #}
-        #models_dict['urls'] = model_urls
+        models_dict = instance_or_query.asdict(**dict_meta)
         return models_dict
 
 

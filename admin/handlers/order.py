@@ -84,7 +84,7 @@ class UpdateOrderStatusHandler(BaseHandler):
         order = update_order_status(
             self.dbsession, kwargs['pk'], kwargs['status']
         )
-        self.send_model_response(order)
+        self.send_model_response(order, follow=True)
 
 
 class AssignOrderHandler(BaseHandler):
@@ -97,7 +97,7 @@ class AssignOrderHandler(BaseHandler):
         order = assign_order_to_phone_number(
             self.dbsession, kwargs['pk'], data['phone_number']
         )
-        self.send_model_response(order)
+        self.send_model_response(order, follow=True)
 
 
 class AdminOrderHandler(OrderHandler):
@@ -106,7 +106,7 @@ class AdminOrderHandler(OrderHandler):
     @allow('admin', allow_list=True)
     def get(self, *args, **kwargs):
         orders = get_admin_orders(self.dbsession, kwargs['pk'])
-        self.send_model_response(orders)
+        self.send_model_response(orders, follow=True)
 
     @handle_exceptions
     @allow('admin')
@@ -118,7 +118,7 @@ class AdminOrderHandler(OrderHandler):
     def put(self, *args, **kwargs):
         data = self.check_input('update')
         order = update_order(self.dbsession, kwargs['pk'], data)
-        self.send_model_response(order)
+        self.send_model_response(order, follow=True)
 
     @handle_exceptions
     @allow('admin')

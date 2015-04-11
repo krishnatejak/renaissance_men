@@ -39,7 +39,7 @@ class BaseHandler(RequestHandler, SessionMixin):
                 data.pop(ignore_field, None)
             return data
 
-    def send_model_response(self, instance_or_query):
+    def send_model_response(self, instance_or_query, follow=False):
         """use this for returning model response"""
         uri_kwargs = {
             'resource_name': self.resource_name
@@ -47,7 +47,8 @@ class BaseHandler(RequestHandler, SessionMixin):
         models_dict = model_to_dict(
             instance_or_query,
             self.model_response_uris,
-            uri_kwargs
+            uri_kwargs,
+            follow=follow
         )
         self.set_status(200)
         self.set_header("Content-Type", "application/json")
