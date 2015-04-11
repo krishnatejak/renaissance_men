@@ -3,9 +3,9 @@ SLOT_NO_OF_DAYS = 3
 SLOT_DAY_END_HOUR = 19
 SLOT_DEFAULT_DURATION = {
     "laundry": 30,
-    "plumber": 60,
-    "electrician": 60,
-    "cook": 60
+    "plumber": 30,
+    "electrician": 30,
+    "cook": 30
 }
 
 SUPPORT_EMAIL_ADDRESS = 'contact@sevame.in'
