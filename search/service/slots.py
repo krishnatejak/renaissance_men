@@ -13,15 +13,16 @@ def get_available_slots(redis, service):
     # if after 10 PM don't show today's slot
     start = 1 if now.hour > constants.SLOT_DAY_END_HOUR else 0
     for day in range(start, constants.SLOT_NO_OF_DAYS):
+        print day
         time_slots = []
         duration = constants.SLOT_DEFAULT_DURATION[service] / 5
-        base_datetime = base_datetime + datetime.timedelta(days=day)
+        day_start = base_datetime + datetime.timedelta(days=day)
         for slot in range(0, 288, duration):
             time_slots.append({
                 "available": False,
-                "schedule_start_at": get_datetime_for_slot(slot, base_datetime),
+                "schedule_start_at": get_datetime_for_slot(slot, day_start),
                 "schedule_end_at": get_datetime_for_slot(slot + duration,
-                                                         base_datetime)
+                                                         day_start)
             })
         if day == 0:
             sp_list = redis.zrangebyscore(
@@ -55,7 +56,7 @@ def get_available_slots(redis, service):
             for free_slot in free_slots:
                 time_slots[free_slot]['available'] = True
         available_slots.append({
-            "date": base_datetime,
+            "date": day_start,
             "available": available,
             "timeslots": time_slots
         })
