@@ -115,12 +115,10 @@ class ServiceProviderUploadHandler(BaseHandler):
         try:
             response_dict = yield operations
 
-            upload_details = {}
             for document_type in response_dict:
                 response, response_data = response_dict[document_type]
-                upload_details[document_type + '_link'] = response.effective_url
+                service_provider.details[document_type + '_link'] = response.effective_url
 
-            service_provider.details.update(**upload_details)
             self.dbsession.add(service_provider)
             self.dbsession.commit()
 
