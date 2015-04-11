@@ -4,7 +4,7 @@ from admin.service.user import *
 from exc import AppException, handle_exceptions
 from utils import allow
 
-__all__ = ['UserHandler', 'UserVerifyHandler']
+__all__ = ['UserHandler', 'UserVerifyHandler', 'AdminUserHandler']
 
 
 class UserHandler(BaseHandler):
@@ -35,3 +35,26 @@ class UserVerifyHandler(BaseHandler):
             verify_otp(self.dbsession, self.redisdb, kwargs['buid'], otp)
         else:
             raise AppException('otp required to verify user')
+
+
+class AdminUserHandler(BaseHandler):
+
+    @handle_exceptions
+    @allow('admin')
+    def post(self, *args, **kwargs):
+        pass
+
+    @handle_exceptions
+    @allow('admin')
+    def get(self, *args, **kwargs):
+        pass
+
+    @handle_exceptions
+    @allow('admin')
+    def put(self, *args, **kwargs):
+        pass
+
+    @handle_exceptions
+    @allow('admin')
+    def delete(self, *args, **kwargs):
+        pass

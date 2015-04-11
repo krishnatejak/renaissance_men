@@ -62,7 +62,8 @@ def update_service_provider(dbsession, provider_id, data):
     old_start = service_provider.day_start
     old_end = service_provider.day_end
 
-    data['skills'] = clean_service_provider_skills(data['skills'])
+    if 'skills' in data:
+        data['skills'] = clean_service_provider_skills(data['skills'])
 
     user = data.pop('user', {})
     update_model_from_dict(service_provider, data)
