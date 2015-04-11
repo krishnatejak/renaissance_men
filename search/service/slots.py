@@ -43,14 +43,14 @@ def get_available_slots(redis, service):
             if day == 0:
                 interval = (now.hour * 60 + now.minute)/5 + 24
                 free_slots = [
-                    int(free_slot)/duration for i, free_slot in
-                    enumerate(free_slots)
+                    int(free_slot)/duration for free_slot in
+                    free_slots
                     if not int(free_slot) % duration and int(free_slot) > interval
                 ]
             else:
                 free_slots = [
-                    int(free_slot)/duration for i, free_slot in
-                    enumerate(free_slots)
+                    int(free_slot)/duration for free_slot in
+                    free_slots
                     if not int(free_slot) % duration
                 ]
             for free_slot in free_slots:
