@@ -12,13 +12,13 @@ class UserHandler(BaseHandler):
     update_ignored = {'verified', 'id', 'admin', 'email'}
 
     @handle_exceptions
-    @allow('service_provider', 'service_user', 'admin')
+    @allow('service_provider', 'service_user', 'admin', base=True)
     def get(self, *args, **kwargs):
         user = get_user(self.dbsession, kwargs['buid'])
         self.send_model_response(user)
 
     @handle_exceptions
-    @allow('service_provider', 'service_user', 'admin')
+    @allow('service_provider', 'service_user', 'admin', base=True)
     def put(self, *args, **kwargs):
         data = self.check_input('update')
         user = update_user(self.dbsession, kwargs['buid'], data)

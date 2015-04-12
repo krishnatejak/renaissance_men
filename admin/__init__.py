@@ -44,7 +44,7 @@ admin_application = Application(
         (r'/api/order/rating/?', OrderRatingHandler),
         (r'/api/missedorder/?', MissedOrderHandler),
 
-        (r'/api/user/?(?P<pk>[\d]+)?', UserHandler),
+        (r'/api/user', UserHandler),
         (r'/api/user/phone/verify', UserVerifyHandler),
 
         (r'/api/signup/?', SignupHandler),
