@@ -229,21 +229,22 @@ def post_order_update(self, order_id):
          }
         send_email = True
     elif order.status == 'confirmed':
-        sp = self.db.query(ServiceProvider).filter(
-                ServiceProvider.id == order.service_provider_id,
-                ServiceProvider.trash == False
-            ).one()
-        sp_image = sp.details['photo_link'] if sp.details and sp.detals.get('photo_link') else constants.DEFAULT_SP_IMAGE
-        kwargs = {
-            'service' : order.service,
-            'order_id': order_id,
-            'sp_name' : str(sp.user.name),
-            'sp_image': sp_image,
-            'template': 'order_assigned_others',
-            'sp_ph_no': str(sp.user.phone_number),
-            'experience': sp.experience
-        }
-        send_email = True
+        if order.service in ['plumber', 'electrician', 'cook']:
+            sp = self.db.query(ServiceProvider).filter(
+                    ServiceProvider.id == order.service_provider_id,
+                    ServiceProvider.trash == False
+                ).one()
+            sp_image = sp.details['photo_link'] if sp.details and sp.detals.get('photo_link') else constants.DEFAULT_SP_IMAGE
+            kwargs = {
+                'service' : order.service,
+                'order_id': order_id,
+                'sp_name' : str(sp.user.name),
+                'sp_image': sp_image,
+                'template': 'order_assigned_others',
+                'sp_ph_no': str(sp.user.phone_number),
+                'experience': sp.experience
+            }
+            send_email = True
     if send_email:
         order_email = email.OrderEmail(customer.email, customer.name, **kwargs)
         order_email.send_email()
