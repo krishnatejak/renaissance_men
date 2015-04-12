@@ -69,7 +69,7 @@ def update_service_provider(dbsession, provider_id, data):
     update_model_from_dict(service_provider, data)
     dbsession.add(service_provider)
 
-    update_user(dbsession, service_provider.user_id, user)
+    update_user(dbsession, service_provider.user_id, user, admin=True)
 
     dbsession.commit()
 
