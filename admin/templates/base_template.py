@@ -58,7 +58,7 @@ base_template = """
                 </div>
                 <div style="float:right;  width:70%; color:#f0ad4e; text-align: right; padding-top:8px">
                     <span>
-                            <span class="contact" style="padding-right:1%">Phone: +91-9901971321</span>
+                            <span class="contact" style="padding-right:1%">Phone: +91-8494954007</span>
                             <span class="contact" style="padding-right:1%">Email: <a href="mailto:contact@sevame.in" style="color:#f0ad4e">contact@sevame.in</a></span>
                     </span>
                 </div>

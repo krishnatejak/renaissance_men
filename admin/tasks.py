@@ -159,6 +159,7 @@ def post_order_creation(self, spid, slot_start, order_id):
     sp_sms.send_sms()
 
     #Email sending
+    send_email = False
     if order.service == 'laundry':
         scheduled_date = order.scheduled
         date = '{0}-{1} on {2}'.format(
@@ -175,8 +176,10 @@ def post_order_creation(self, spid, slot_start, order_id):
             'date'    : date,
             'template': 'order_accepted_laundry'
         }
-    order_email = email.OrderEmail(customer.email, customer.name, **kwargs)
-    order_email.send_email()
+        send_email = True
+    if send_email:
+        order_email = email.OrderEmail(customer.email, customer.name, **kwargs)
+        order_email.send_email()
 
 @celery.task(name='admin.order.updated', base=DBTask, bind=True)
 def post_order_update(self, order_id):
@@ -199,7 +202,7 @@ def post_order_update(self, order_id):
                 'link'    : 'link'
             }
             send_email = True
-        elif order.service in ['plumber', 'electrician']:
+        elif order.service in ['plumber', 'electrician', 'cook']:
             sp = self.db.query(ServiceProvider).filter(
                 ServiceProvider.id == order.service_provider_id,
                 ServiceProvider.trash == False
@@ -226,17 +229,16 @@ def post_order_update(self, order_id):
                 ServiceProvider.id == order.service_provider_id,
                 ServiceProvider.trash == False
             ).one()
+        sp_image = sp.details['photo_link'] if sp.details and sp.detals.get('photo_link') else constants.DEFAULT_SP_IMAGE
         kwargs = {
             'service' : order.service,
             'order_id': order_id,
             'sp_name' : str(sp.user.name),
-            'sp_image': sp.details['photo_link'] if sp.details and sp.detals.get('photo_link') else
-                        constants.DEFAULT_SP_IMAGE,
+            'sp_image': sp_image,
             'template': 'order_assigned_others',
             'sp_ph_no': str(sp.user.phone_number),
             'experience': sp.experience
         }
-
         send_email = True
     if send_email:
         order_email = email.OrderEmail(customer.email, customer.name, **kwargs)

@@ -74,19 +74,26 @@ class OrderEmail(EmailService):
             subject = constants.LAUNDRY_BILL_EMAIL_SUBJECT
         elif self.template == 'feedback':
             self.order_id = kwargs['order_id'],
+            if type(self.order_id) == tuple:
+                self.order_id = self.order_id[0]
             self.user_id = kwargs['user_id']
             subject = constants.FEEDBACK_SUBJECT
         elif self.template == 'order_quote_others':
             self.order_id = kwargs['order_id']
+            if type(self.order_id) == tuple:
+                self.order_id = self.order_id[0]
             self.sp_name = kwargs['sp_name']
             self.details = kwargs['details']
             self.link = kwargs['link']
             subject = constants.QUOTE_OTHERS.format(self.service, self.order_id)
         elif self.template == 'order_assigned_others':
             self.order_id = kwargs['order_id']
-            self.sp_name = str(kwargs['sp_name']),
+            self.sp_name = kwargs['sp_name'],
+            self.sp_name = self.sp_name[0]
             self.sp_image = kwargs['sp_image'],
+            self.sp_image = self.sp_image[0]
             self.sp_ph_no = kwargs['sp_ph_no'],
+            self.sp_ph_no = self.sp_ph_no[0]
             self.experience = kwargs['experience']
             subject = constants.SP_ASSIGNED.format(self.sp_name, self.service)
 
