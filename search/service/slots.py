@@ -39,7 +39,6 @@ def get_available_slots(redis, service):
             ])
             available = redis.zcard('free_slots') > 0
             free_slots = redis.zrange('free_slots', 0, -1)
-            print free_slots
             if day == 0:
                 interval = (now.hour * 60 + now.minute)/5 + 36
                 free_slots = [
