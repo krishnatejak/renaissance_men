@@ -3,7 +3,7 @@ feedback_template = """
 <p>Dear {customer_name}</p>
 <p>Your {service} Order No. {order_id} is completed. </p>
 <p>Please rate your experience with Sevame.</p>
-<form action="{rating_link}" method="GET">
+<form action="{rating_link}" method="POST">
     <input name="rating" type="radio" value="1"/> ★☆☆☆☆<br />
     <input name="rating" type="radio" value="2"/> ★★☆☆☆<br />
     <input name="rating" type="radio" value="3"/> ★★★☆☆<br />
