@@ -181,6 +181,23 @@ def post_order_creation(self, spid, slot_start, order_id):
             'template': 'order_accepted_laundry'
         }
         send_email = True
+    elif order.service in ['plumber', 'electrician', 'cook']:
+        scheduled_date = order.scheduled
+        date = '{0}-{1} on {2}'.format(
+            scheduled_date.strftime('%H:%M'),
+            (scheduled_date + datetime.timedelta(minutes=30)).strftime('%H:%M'),
+            scheduled_date.strftime('%d-%m-%Y')
+        )
+        kwargs = {
+            'service' : order.service,
+            'request' : order.request,
+            'order_id': order.id,
+            'address' : order.address,
+            'phone'   : customer.phone_number,
+            'date'    : date,
+            'template': 'order_successful_others_template'
+        }
+        send_email = True
     if send_email:
         order_email = email.OrderEmail(customer.email, customer.name, **kwargs)
         order_email.send_email()

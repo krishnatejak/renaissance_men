@@ -3,7 +3,7 @@ order_successful_others_template = """
 <p>Thank you for using <b>Sevame</b>. Your {service} order for {request} has been placed successfully.</p>
 <div style="padding-left:5%">
     <p><b>Order Details:</b></p>
-    <p>Order Number: {order_number}</p>
+    <p>Order Number: {order_id}</p>
     <p>Arrival Time: {pickup_time}</p>
     <p>Address: {order_address}</p>
     <p>Phone Number: {phone_number}</p>

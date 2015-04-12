@@ -9,6 +9,7 @@ from admin.templates.base_template import base_template
 from admin.templates.feedback_template import feedback_template
 from admin.templates.order_quote_others import order_quote_others
 from admin.templates.order_assigned_other import order_assigned_others
+from admin.templates.order_successfull_others import order_successful_others_template
 
 from utils import calculate_hmac
 
@@ -39,6 +40,7 @@ class EmailService(object):
             s = sendgrid.SendGridClient(self.host_user, self.host_pass)
             message = sendgrid.Mail()
             message.set_from(self.from_email)
+            message.set_from_name('Sevame')
             message.set_subject(self.subject)
             message.set_html(self.html)
             message.set_text(self.text)
@@ -96,6 +98,13 @@ class OrderEmail(EmailService):
             self.sp_ph_no = self.sp_ph_no[0]
             self.experience = kwargs['experience']
             subject = constants.SP_ASSIGNED.format(self.sp_name, self.service)
+        elif self.template == 'order_successful_others_template':
+            self.request = kwargs['request']
+            self.order_id = kwargs['order_id']
+            self.address = kwargs['address']
+            self.phone = kwargs['phone']
+            self.date = kwargs['date']
+            subject = constants.ORDER_ACCEPTED_SUBJECT
 
         super(OrderEmail, self).__init__(
                                             email=email,
@@ -169,5 +178,15 @@ class OrderEmail(EmailService):
                 sp_ph_no=self.sp_ph_no,
                 sp_experience=self.experience,
                 sp_image=self.sp_image
+            )
+        elif self.template == 'order_successful_others_template':
+            template_content = order_successful_others_template.format(
+                customer_name=self.first_name,
+                service=self.service,
+                request=self.request,
+                order_id=self.order_id,
+                pickup_time=self.date,
+                order_address=self.address,
+                phone_number=self.phone
             )
         self.html = base_template.format(template_content=template_content)
