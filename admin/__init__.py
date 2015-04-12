@@ -55,7 +55,7 @@ admin_application = Application(
         (r'/api/admin/order/?(?P<pk>\d+)?', AdminOrderHandler),
         (r'/api/admin/order/(?P<pk>[\d]+)/assign', AssignOrderHandler),
         (r'/api/admin/order/(?P<pk>[\d]+)/status/(?P<status>[a-z]+)', UpdateOrderStatusHandler),
-        (r'/api/admin/user/?(?P<pk>\d+)?', AdminOrderHandler)
+        (r'/api/admin/user/?(?P<pk>\d+)?', AdminUserHandler)
     ],
     google_oauth={
         "key": config.GOOGLE_OAUTH2_CLIENT_ID,

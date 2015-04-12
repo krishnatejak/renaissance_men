@@ -9,7 +9,7 @@ import pyotp
 from sqlalchemy.orm.exc import NoResultFound
 
 __all__ = ['create_user', 'get_user', 'handle_user_authentication',
-           'verify_otp', 'update_user']
+           'verify_otp', 'update_user', 'get_admin_users']
 
 BASE_USER_UPDATE_IGNORE = ('verified',)
 
@@ -148,3 +148,12 @@ def phone_number_exists(dbsession, phone_number):
     ).count()
 
     return count > 0
+
+
+def get_admin_users(dbsession, uid=None):
+    if uid:
+        user = dbsession.query(BaseUser).filter(
+            BaseUser.id == uid
+        ).one()
+    else:
+        user = dbsession.query(BaseUser).all()
