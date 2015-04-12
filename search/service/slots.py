@@ -81,7 +81,7 @@ def assign_slot_to_sp(redis, service, slot_datetime, block=False):
      raises AssignmentException otherwise"""
     slot_datetime = parse_datetime(slot_datetime)
     now = datetime.datetime.now()
-    if slot_datetime < now + datetime.timedelta(hours=2):
+    if slot_datetime < now + datetime.timedelta(hours=3):
         raise AssignmentException('Cannot assign slot in past')
 
     now3 = datetime.datetime(now.year, now.month, now.day + 3)
