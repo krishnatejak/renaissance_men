@@ -25,6 +25,7 @@ def create_order(dbsession, redis, data, uid):
 
     update_model_from_dict(order, data)
     order.service_user_id = uid
+    order.status = 'assigned'
     dbsession.add(order)
 
     order_rating = OrderRating()

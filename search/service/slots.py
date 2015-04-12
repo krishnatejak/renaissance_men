@@ -13,7 +13,6 @@ def get_available_slots(redis, service):
     # if after 10 PM don't show today's slot
     start = 1 if now.hour > constants.SLOT_DAY_END_HOUR else 0
     for day in range(start, constants.SLOT_NO_OF_DAYS):
-        print day
         time_slots = []
         duration = constants.SLOT_DEFAULT_DURATION[service] / 5
         day_start = base_datetime + datetime.timedelta(days=day)
@@ -32,7 +31,7 @@ def get_available_slots(redis, service):
             sp_list = redis.zrangebyscore(
                 "{0}:availability:sps".format(service), 0, 1
             )
-        md = base_datetime.strftime('%m%d')
+        md = day_start.strftime('%m%d')
         available = False
         if sp_list:
             redis.zunionstore('free_slots', [
@@ -60,6 +59,7 @@ def get_available_slots(redis, service):
             "available": available,
             "timeslots": time_slots
         })
+
     return available_slots
 
 
@@ -81,7 +81,7 @@ def assign_slot_to_sp(redis, service, slot_datetime, block=False):
      raises AssignmentException otherwise"""
     slot_datetime = parse_datetime(slot_datetime)
     now = datetime.datetime.now()
-    if slot_datetime < now + datetime.timedelta(hours=2):
+    if slot_datetime < now + datetime.timedelta(hours=3):
         raise AssignmentException('Cannot assign slot in past')
 
     now3 = datetime.datetime(now.year, now.month, now.day + 3)
