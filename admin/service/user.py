@@ -157,4 +157,5 @@ def get_admin_users(dbsession, uid=None):
             BaseUser.id == uid
         ).one()
     else:
-        user = dbsession.query(BaseUser).all()
+        user = dbsession.query(BaseUser).order_by(BaseUser.id.asc())
+    return user

@@ -97,7 +97,7 @@ class BaseUser(db.Base):
     class Meta(object):
         follow = []
         follow_exclude = []
-        exclude = ['id']
+        exclude = []
         fk = []
 
 
