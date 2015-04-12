@@ -90,7 +90,7 @@ def get_service_provider(dbsession, spid=None):
     else:
         service_provider = dbsession.query(ServiceProvider).filter(
             ServiceProvider.trash == False
-        )
+        ).order_by(ServiceProvider.id.asc())
 
     return service_provider
 
