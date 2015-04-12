@@ -104,7 +104,7 @@ class BaseUser(db.Base):
 class Job(db.Base):
     __tablename__ = 'job'
 
-    status_enums = ('assigned', 'accepted', 'rejected', 'started', 'complete')
+    status_enums = ('assigned', 'accepted', 'rejected', 'started', 'complete', 'cancelled')
 
     id = Column(Integer, primary_key=True)
     status = Column("status", Enum(*status_enums, name='status_types'), default='assigned')
