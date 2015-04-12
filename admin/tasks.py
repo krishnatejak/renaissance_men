@@ -202,7 +202,7 @@ def post_order_update(self, order_id):
                 'link'    : 'link'
             }
             send_email = True
-        elif order.service in ['plumber', 'electrician']:
+        elif order.service in ['plumber', 'electrician', 'cook']:
             sp = self.db.query(ServiceProvider).filter(
                 ServiceProvider.id == order.service_provider_id,
                 ServiceProvider.trash == False
