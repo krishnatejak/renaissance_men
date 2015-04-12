@@ -68,12 +68,15 @@ def update_service_provider(self, spid, old_start=None, old_end=None, created=Fa
                 *added_skills
             )
         # update availability in <service>:availability:sps
-        availability = 1 if sp.availability else 0
-        kwargs = {str(spid): availability}
-        self.r.zadd(
-            "{0}:availability:sps".format(service),
-            **kwargs
-        )
+        if sp.user.verified:
+            availability = 1 if sp.availability else 0
+            kwargs = {str(spid): availability}
+            self.r.zadd(
+                "{0}:availability:sps".format(service),
+                **kwargs
+            )
+        else:
+            self.r.zrem("{0}:availability:sps".format(service), spid)
 
     # update service provider data in sp:<id>
     sp_dict = {
@@ -82,7 +85,8 @@ def update_service_provider(self, spid, old_start=None, old_end=None, created=Fa
         "phone_number": sp.user.phone_number,
         "home_location": sp.home_location,
         "office_location": sp.office_location,
-        "service_range": sp.service_range
+        "service_range": sp.service_range,
+        "verified": sp.user.verified
         }
     self.r.hmset("sp:{0}".format(sp.id), sp_dict)
 
