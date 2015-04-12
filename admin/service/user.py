@@ -33,7 +33,7 @@ def create_user(dbsession, data):
     return user
 
 @transaction
-def update_user(dbsession, uid, data):
+def update_user(dbsession, uid, data, admin=False):
     user = dbsession.query(BaseUser).filter(
         BaseUser.id == uid
     ).one()
@@ -44,8 +44,9 @@ def update_user(dbsession, uid, data):
         phone_number_changed = True
 
     # remove all data that should be ignored
-    for field in BASE_USER_UPDATE_IGNORE:
-        data.pop(field, None)
+    if not admin:
+        for field in BASE_USER_UPDATE_IGNORE:
+            data.pop(field, None)
 
     update_model_from_dict(user, data)
 
@@ -156,4 +157,5 @@ def get_admin_users(dbsession, uid=None):
             BaseUser.id == uid
         ).one()
     else:
-        user = dbsession.query(BaseUser).all()
+        user = dbsession.query(BaseUser).order_by(BaseUser.id.asc())
+    return user

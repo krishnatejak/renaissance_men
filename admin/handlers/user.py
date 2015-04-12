@@ -49,7 +49,7 @@ class AdminUserHandler(BaseHandler):
         self.send_model_response(user)
 
     @handle_exceptions
-    @allow('admin')
+    @allow('admin', allow_list=True)
     def get(self, *args, **kwargs):
         users = get_admin_users(self.dbsession, kwargs['pk'])
         self.send_model_response(users)
