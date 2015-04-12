@@ -41,7 +41,7 @@ admin_application = Application(
         (r'/api/auth/google/?', GoogleAuthHandler),
         (r'/api/order/?(?P<pk>[\d]+)?', OrderHandler),
         (r'/api/order/status/(?P<status>[a-z]+)', SuOrderStatusHandler),
-        (r'/api/order/(?P<pk>[\d]+)/rating/(?P<rating>[\d])', OrderRatingHandler),
+        (r'/api/order/rating/?', OrderRatingHandler),
         (r'/api/missedorder/?', MissedOrderHandler),
 
         (r'/api/user', UserHandler),
