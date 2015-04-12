@@ -4,6 +4,7 @@ import decimal
 import random
 import hmac
 import hashlib
+import base64
 
 from sqlalchemy.orm.query import Query
 from tornado.web import HTTPError
@@ -207,4 +208,4 @@ def allow(*user_types, **basekw):
 
     return validate
 def calculate_hmac(message):
-    return hmac.new(config.COOKIE_SECRET, msg=message, digestmod=hashlib.sha256).digest()
+    return base64.urlsafe_b64encode(hmac.new(config.COOKIE_SECRET, msg=message, digestmod=hashlib.sha1).digest())

@@ -74,6 +74,8 @@ class OrderEmail(EmailService):
             subject = constants.LAUNDRY_BILL_EMAIL_SUBJECT
         elif self.template == 'feedback':
             self.order_id = kwargs['order_id'],
+            if type(self.order_id) == tuple:
+                self.order_id = self.order_id[0]
             self.user_id = kwargs['user_id']
             subject = constants.FEEDBACK_SUBJECT
         elif self.template == 'order_quote_others':

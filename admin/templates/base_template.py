@@ -1,4 +1,3 @@
-# encoding=utf8
 base_template = """
 <!DOCTYPE html>
 <html>
