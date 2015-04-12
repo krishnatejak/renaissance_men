@@ -159,6 +159,7 @@ class AdminServiceProviderHandler(ServiceProviderHandler):
         )
         self.send_model_response(service_provider, follow=True)
 
+    @handle_exceptions
     @allow('admin', allow_list=True)
     def get(self, *args, **kwargs):
         if kwargs['pk']:
@@ -166,6 +167,7 @@ class AdminServiceProviderHandler(ServiceProviderHandler):
         service_provider = get_service_provider(self.dbsession, kwargs['pk'])
         self.send_model_response(service_provider, follow=True)
 
+    @handle_exceptions
     @allow('admin')
     def delete(self, *args, **kwargs):
         pass
