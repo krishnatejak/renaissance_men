@@ -51,6 +51,12 @@ class SuOrderStatusHandler(BaseHandler):
 class MissedOrderHandler(BaseHandler):
     resource_name = 'order'
     create_required = {'location'}
+    @allow('admin', allow_list=True)
+    def get(self, *args, **kwargs):
+        missedorders = get_missed_orders(
+            self.dbsession)
+        self.send_model_response(missedorders)
+
 
     @handle_exceptions
     def post(self):
