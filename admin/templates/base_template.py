@@ -56,7 +56,7 @@ base_template = """
                     <span><a href="https://sevame.in/images/ignore/facebook.jpg"><img src="https://sevame.in/images/ignore/facebook.jpg"></a></span>
                     <span><a href="https://sevame.in/images/ignore/twitter.jpg"><img src= "https://sevame.in/images/ignore/twitter.jpg"></a></span>
                 </div>
-                <div style="float:right;  width:70%; color:#f0ad4e; text-align: right; padding-top:8px">
+                <div style="float:right;  width:70%; color:#f0ad4e; text-align: right; padding-top:15px">
                     <span>
                             <span class="contact" style="padding-right:1%">Phone: +91-8494954007</span>
                             <span class="contact" style="padding-right:1%">Email: <a href="mailto:contact@sevame.in" style="color:#f0ad4e">contact@sevame.in</a></span>
