@@ -75,3 +75,6 @@ class PopulateHandler(RequestHandler):
 class SetCookieHandler(RequestHandler, SessionMixin):
     def get(self, *args, **kwargs):
         self.session['dummy'] = 'true'
+
+    def compute_etag(self):
+        return None
