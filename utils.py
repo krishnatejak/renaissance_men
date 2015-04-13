@@ -207,5 +207,14 @@ def allow(*user_types, **basekw):
         return _wrapper
 
     return validate
+
 def calculate_hmac(message):
     return base64.urlsafe_b64encode(hmac.new(config.COOKIE_SECRET, msg=message, digestmod=hashlib.sha1).digest())
+
+def verify_rating_sanity(order_info):
+    hmac_string = order_info.split(".")[-1]
+    order_info = order_info.remove(".{0}".format(hmac_string), "")
+    if calculate_hmac(order_info) == order_info:
+        return order_info
+    else:
+        return None

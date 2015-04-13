@@ -106,47 +106,33 @@ def get_missed_orders(dbsession, oid=None):
 
 
 @transaction
-def save_rating(dbsession, order_id, **kwargs):
-    """expects kwargs in {
-        "sp_id": service_provider id,
-        "sp_rating": service provider rating
-        "su_id": service_user id,
-        "su_rating": service user rating
-    }"""
-
+def save_rating(dbsession, order_string, rating):
+    order_id, user, user_id = order_string.split('.')
     order = dbsession.query(Orders).filter(
         Orders.id == order_id
     ).one()
-
     order_rating = dbsession.query(OrderRating).filter(
         OrderRating.order_id == order_id
     ).one()
 
-    if all([
-        kwargs.get('sp_id'),
-        kwargs.get('sp_rating')
-    ]):
-        sp_id = int(kwargs['sp_id'])
+    if user == 'sp':
+        sp_id = int(user_id)
         if order.service_provider_id != sp_id:
             raise AppException('Cannot rate order, sp not assigned to this order')
-        sp_rating = int(kwargs['sp_rating'])
+        sp_rating = int(rating)
         if not (0 <= sp_rating <= 5):
             raise AppException('rating value should be between 0 and 5')
         order_rating.sp_rating = sp_rating
         dbsession.add(order_rating)
-    elif all([
-        kwargs.get('su_id'),
-        kwargs.get('su_rating')
-    ]):
-        su_id = kwargs['su_id']
+    elif user == 'su':
+        su_id = int(user_id)
         if order.service_user_id != su_id:
             raise AppException('Cannot rate order, su not assigned to this order')
-        su_rating = int(kwargs['su_rating'])
+        su_rating = int(rating)
         if not (0 <= su_rating <= 5):
             raise AppException('rating value should be between 0 and 5')
         order_rating.su_rating = su_rating
         dbsession.add(order_rating)
-
     else:
         raise AppException('Cannot rate order without sp/su')
     dbsession.commit()

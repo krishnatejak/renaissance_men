@@ -1,7 +1,7 @@
 from admin.service.order import *
 from admin.handlers.common import BaseHandler
-from exc import handle_exceptions
-from utils import allow
+from exc import handle_exceptions, AppException
+from utils import allow, verify_rating_sanity
 
 __all__ = ['OrderHandler', 'SuOrderStatusHandler', 'MissedOrderHandler',
            'OrderRatingHandler', 'UpdateOrderStatusHandler',
@@ -66,20 +66,17 @@ class MissedOrderHandler(BaseHandler):
 
 
 class OrderRatingHandler(BaseHandler):
-    @allow('service_user', 'service_provider')
+    #@allow('service_user', 'service_provider')
+    @handle_exceptions
     def post(self, *args, **kwargs):
-        if kwargs['user_type'] == 'service_provider':
-            data = {
-                'sp_id': kwargs['uid'],
-                'sp_rating': kwargs['rating']
-            }
-            save_rating(self.dbsession, kwargs['pk'], **data)
-        elif kwargs['user_type'] == 'service_user':
-            data = {
-                'su_id': kwargs['uid'],
-                'su_rating': kwargs['rating']
-            }
-            save_rating(self.dbsession, kwargs['pk'], **data)
+
+        if 'order_info' in kwargs:
+            order_string = verify_rating_sanity(kwargs)
+
+        if order_string:
+            save_rating(self.dbsession, order_string, kwargs['rating'])
+        else:
+            raise AppException('Please provide correct order info')
 
 
 class UpdateOrderStatusHandler(BaseHandler):
