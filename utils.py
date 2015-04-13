@@ -144,10 +144,12 @@ def get_json_datetime(date_time=None):
         return now.strftime(JSON_DATETIME_FORMAT)
     return date_time.strftime(JSON_DATETIME_FORMAT)
 
+
 def parse_datetime(epoch_time):
-    #date_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(float(epoch_time)))
-    date_time = datetime.datetime.fromtimestamp(float(epoch_time))
-    return date_time
+    d = datetime.datetime.fromtimestamp(float(epoch_time))
+    d = constants.GMT_TIMEZONE.localize(d)
+    d = d.astimezone(constants.IST_TIMEZONE)
+    return d
 
 
 # authorization methods
