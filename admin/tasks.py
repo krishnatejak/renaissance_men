@@ -133,74 +133,76 @@ def verify_user_phone(self, uid):
 
 @celery.task(name='admin.order.created', base=DBTask, bind=True)
 def post_order_creation(self, spid, slot_start, order_id):
-    phone_number = self.db.query(BaseUser.phone_number).filter(
-        ServiceProvider.id == spid,
-        ServiceProvider.user_id == BaseUser.id,
+    try:
+        phone_number = self.db.query(BaseUser.phone_number).filter(
+            ServiceProvider.id == spid,
+            ServiceProvider.user_id == BaseUser.id,
 
-    ).one()
-    order = self.db.query(Orders).filter(
-        Orders.id == order_id
-    ).one()
-    customer = self.db.query(BaseUser.phone_number, BaseUser.name, BaseUser.email).filter(
-        ServiceUser.id == order.service_user_id,
-        BaseUser.id == ServiceUser.user_id
-    ).one()
-    slot_start = slot_start.strftime('%B %d %I:%M %p')
-    message = '{service} pickup at {time} at {address}. Order {order_id}.Phone number:{phone_number}, Name:{name}'.\
-                                    format(
-                                        service=order.service,
-                                        time=slot_start,
-                                        order_id=order_id,
-                                        address=order.address,
-                                        phone_number=customer.phone_number,
-                                        name=customer.name
-                                    )
-    kwargs = {
-        "to_number": str(phone_number.phone_number),
-        "body": message
-    }
-    sp_sms = Sms(**kwargs)
-    sp_sms.send_sms()
-
-    #Email sending
-    send_email = False
-    if order.service == 'laundry':
-        scheduled_date = order.scheduled
-        date = '{0}-{1} on {2}'.format(
-            scheduled_date.strftime('%H:%M'),
-            (scheduled_date + datetime.timedelta(minutes=30)).strftime('%H:%M'),
-            scheduled_date.strftime('%d-%m-%Y')
-        )
+        ).one()
+        order = self.db.query(Orders).filter(
+            Orders.id == order_id
+        ).one()
+        customer = self.db.query(BaseUser.phone_number, BaseUser.name, BaseUser.email).filter(
+            ServiceUser.id == order.service_user_id,
+            BaseUser.id == ServiceUser.user_id
+        ).one()
+        slot_start = slot_start.strftime('%B %d %I:%M %p')
+        message = '{service} pickup at {time} at {address}. Order {order_id}.Phone number:{phone_number}, Name:{name}'.\
+                                        format(
+                                            service=order.service,
+                                            time=slot_start,
+                                            order_id=order_id,
+                                            address=order.address,
+                                            phone_number=customer.phone_number,
+                                            name=customer.name
+                                        )
         kwargs = {
-            'service' : order.service,
-            'request' : order.request,
-            'order_id': order.id,
-            'address' : order.address,
-            'phone'   : customer.phone_number,
-            'date'    : date,
-            'template': 'order_accepted_laundry'
+            "to_number": str(phone_number.phone_number),
+            "body": message
         }
-        send_email = True
-    elif order.service in ['plumber', 'electrician', 'cook']:
-        scheduled_date = order.scheduled
-        date = '{0}-{1} on {2}'.format(
-            scheduled_date.strftime('%H:%M'),
-            (scheduled_date + datetime.timedelta(minutes=30)).strftime('%H:%M'),
-            scheduled_date.strftime('%d-%m-%Y')
-        )
-        kwargs = {
-            'service' : order.service,
-            'request' : order.request,
-            'order_id': order.id,
-            'address' : order.address,
-            'phone'   : customer.phone_number,
-            'date'    : date,
-            'template': 'order_successful_others_template'
-        }
-        send_email = True
-    if send_email:
-        order_email = email.OrderEmail(customer.email, customer.name, **kwargs)
-        order_email.send_email()
+        sp_sms = Sms(**kwargs)
+        sp_sms.send_sms()
+        #Email sending
+        send_email = False
+        if order.service == 'laundry':
+            scheduled_date = order.scheduled
+            date = '{0}-{1} on {2}'.format(
+                scheduled_date.strftime('%H:%M'),
+                (scheduled_date + datetime.timedelta(minutes=30)).strftime('%H:%M'),
+                scheduled_date.strftime('%d-%m-%Y')
+            )
+            kwargs = {
+                'service' : order.service,
+                'request' : order.request,
+                'order_id': order.id,
+                'address' : order.address,
+                'phone'   : customer.phone_number,
+                'date'    : date,
+                'template': 'order_accepted_laundry'
+            }
+            send_email = True
+        elif order.service in ['plumber', 'electrician', 'cook']:
+            scheduled_date = order.scheduled
+            date = '{0}-{1} on {2}'.format(
+                scheduled_date.strftime('%H:%M'),
+                (scheduled_date + datetime.timedelta(minutes=30)).strftime('%H:%M'),
+                scheduled_date.strftime('%d-%m-%Y')
+            )
+            kwargs = {
+                'service' : order.service,
+                'request' : order.request,
+                'order_id': order.id,
+                'address' : order.address,
+                'phone'   : customer.phone_number,
+                'date'    : date,
+                'template': 'order_successful_others_template'
+            }
+            send_email = True
+        if send_email:
+            order_email = email.OrderEmail(customer.email, customer.name, **kwargs)
+            order_email.send_email()
+    except Exception as e:
+        print 'Exception occurred in post order method %s' %e
 
 @celery.task(name='admin.order.updated', base=DBTask, bind=True)
 def post_order_update(self, order_id):
