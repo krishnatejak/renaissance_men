@@ -23,10 +23,12 @@ class GoogleAuthHandler(BaseHandler, GoogleOAuth2Mixin):
         next_url = self.get_argument('next', None)
 
         if next_url:
-            self.set_secure_cookie('next', next_url)
+            self.session['next'] = next_url
+            #self.set_secure_cookie('next', next_url)
 
         if user_type:
-            self.set_secure_cookie('user_type', user_type)
+            self.session['user_type'] = user_type
+            #self.set_secure_cookie('user_type', user_type)
 
         if self.get_argument('code', False):
             user = yield self.get_authenticated_user(
@@ -38,12 +40,12 @@ class GoogleAuthHandler(BaseHandler, GoogleOAuth2Mixin):
                     user['id_token'],
                     config.GOOGLE_OAUTH2_CLIENT_ID
                 )
-                user_type = self.get_secure_cookie('user_type')
+                user_type = self.session['user_type']
                 user = handle_user_authentication(
                     self.dbsession, details, user_type
                 )
 
-                self.session['user_type'] = user_type
+                #self.session['user_type'] = user_type
                 if user_type == 'admin':
                     self.session['buid'] = user.id
                     self.session['uid'] = user.id
@@ -52,9 +54,8 @@ class GoogleAuthHandler(BaseHandler, GoogleOAuth2Mixin):
                     self.session['buid'] = user.user_id
                     self.session['uid'] = user.id
 
-                next_url = self.get_secure_cookie('next', None)
+                next_url = self.session['next']
                 if next_url:
-                    self.clear_cookie('next')
                     self.redirect(next_url)
                 else:
                     self.send_model_response(user)

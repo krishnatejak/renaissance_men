@@ -8,7 +8,7 @@ from session import SessionMixin
 from utils import model_to_dict, TornadoJSONEncoder
 from admin import tasks
 
-__all__ = ['CloseHandler', 'PopulateHandler']
+__all__ = ['CloseHandler', 'PopulateHandler', 'SetCookieHandler']
 
 
 class BaseHandler(RequestHandler, SessionMixin):
@@ -70,3 +70,8 @@ class PopulateHandler(RequestHandler):
         tasks.admin_add_all.apply_async()
         self.set_status(200)
         self.finish()
+
+
+class SetCookieHandler(RequestHandler, SessionMixin):
+    def get(self, *args, **kwargs):
+        self.session['dummy'] = 'true'
