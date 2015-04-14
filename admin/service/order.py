@@ -145,7 +145,7 @@ def get_sp_orders_by_status(dbsession, spid, status):
     if status:
         status = status.strip()
         status = status.split(',')
-        orders = dbsession.filter(
+        orders = dbsession.query(Orders).filter(
             Orders.status.in_(status)
         )
     return orders
