@@ -97,7 +97,7 @@ class BaseUser(db.Base):
     class Meta(object):
         follow = []
         follow_exclude = []
-        exclude = ['id']
+        exclude = []
         fk = []
 
 
@@ -166,7 +166,7 @@ class Orders(db.Base):
     location_permitted = Column("location_permitted", Boolean, default=False)
 
     class Meta(object):
-        follow = []
+        follow = ['service_user', 'service_provider']
         follow_exclude = []
         exclude = []
         fk = []
