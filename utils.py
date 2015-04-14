@@ -147,8 +147,7 @@ def get_json_datetime(date_time=None):
 
 def parse_datetime(epoch_time):
     d = datetime.datetime.fromtimestamp(float(epoch_time))
-    d = constants.GMT_TIMEZONE.localize(d)
-    d = d.astimezone(constants.IST_TIMEZONE)
+    d = constants.IST_TIMEZONE.localize(d)
     return d
 
 
