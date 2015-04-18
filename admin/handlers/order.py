@@ -5,7 +5,8 @@ from utils import allow, verify_rating_sanity
 
 __all__ = ['OrderHandler', 'SuOrderStatusHandler', 'MissedOrderHandler',
            'OrderRatingHandler', 'UpdateOrderStatusHandler',
-           'AssignOrderHandler', 'AdminOrderHandler']
+           'AssignOrderHandler', 'AdminOrderHandler', 'OrderBidHandler',
+           'AdminOrderBidsHandler']
 
 
 class OrderHandler(BaseHandler):
@@ -127,3 +128,23 @@ class AdminOrderHandler(OrderHandler):
     @allow('admin')
     def delete(self, *args, **kwargs):
         pass
+
+
+class OrderBidHandler(BaseHandler):
+
+    @handle_exceptions
+    @allow('service_provider')
+    def post(self, *args, **kwargs):
+        accepted = 'accept' in kwargs
+        order_bid = bid_order(
+            self.dbsession, kwargs['pk'], kwargs['uid'], accepted=accepted
+        )
+        self.send_model_response(order_bid)
+
+
+class AdminOrderBidsHandler(BaseHandler):
+
+    @handle_exceptions
+    @allow('admin')
+    def get(self, *args, **kwargs):
+        order_bids = get_sp_order_bids(self.dbsession, kwargs['pk'])

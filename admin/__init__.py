@@ -31,6 +31,7 @@ admin_application = Application(
         #(r'/api/serviceprovider/jobs', ServiceProviderJobHandler),
         (r'/api/serviceprovider/orders', ServiceProviderOrdersHandler),
         (r'/api/serviceprovider(?P<pk>/\d+)?/upload', ServiceProviderUploadHandler),
+        (r'/api/serviceprovider/bids/?', ServiceProviderBidsHandler),
         #(r'/api/job/?', JobHandler),
         #(r'/api/job/([\d]+)?/?', JobHandler),
         #(r'/api/job/([\d]+)/start/?', JobStartHandler),
@@ -42,6 +43,7 @@ admin_application = Application(
         (r'/api/order/?(?P<pk>[\d]+)?', OrderHandler),
         (r'/api/order/status/(?P<status>[a-z]+)', SuOrderStatusHandler),
         (r'/api/order/rating/?', OrderRatingHandler),
+        (r'/api/order/(?P<pk>[\d]+)/bid/(?P<bid>accept|reject)', OrderBidHandler),
         (r'/api/missedorder/?', MissedOrderHandler),
 
         (r'/api/user/?(?P<pk>\d+)?', UserHandler),
@@ -55,6 +57,7 @@ admin_application = Application(
         (r'/api/admin/order/?(?P<pk>\d+)?', AdminOrderHandler),
         (r'/api/admin/order/(?P<pk>[\d]+)/assign', AssignOrderHandler),
         (r'/api/admin/order/(?P<pk>[\d]+)/status/(?P<status>[a-z]+)', UpdateOrderStatusHandler),
+        (r'/api/admin/order/(?P<pk>[\d]+)/bids', AdminOrderBidsHandler),
         (r'/api/admin/user/?(?P<pk>\d+)?', AdminUserHandler),
         (r'/api/setcookie', SetCookieHandler)
     ],

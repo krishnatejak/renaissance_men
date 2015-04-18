@@ -7,7 +7,7 @@ from datetime import datetime
 import db
 
 __all__ = ['ServiceProvider', 'Job', 'BaseUser', 'OrderRating', 'Signupemail',
-           'ServiceUser', 'Orders', 'MissedOrders']
+           'ServiceUser', 'Orders', 'MissedOrders', 'OrderBid']
 
 
 class MutableDict(Mutable, dict):
@@ -37,6 +37,8 @@ class MutableDict(Mutable, dict):
         self.changed()
 
 
+
+
 class ServiceProvider(db.Base):
     __tablename__ = 'service_provider'
 
@@ -49,6 +51,7 @@ class ServiceProvider(db.Base):
     experience = Column("experience", Float, default=0.0)
     jobs = relationship('Job', backref=backref('service_provider'))
     orders = relationship('Orders', backref=backref('service_provider'))
+    bids = relationship('OrderBid', backref=backref('service_provider'))
     service_range = Column("service_range", Integer, default=5)
     trash = Column("trash", Boolean, default=False)
     day_start = Column("day_start", Integer, default=96)
@@ -164,6 +167,7 @@ class Orders(db.Base):
     job_id = Column("job_id", ForeignKey("job.id"))
     details = Column("details", MutableDict.as_mutable(JSON))
     location_permitted = Column("location_permitted", Boolean, default=False)
+    bids = relationship('OrderBid', backref=backref('order'))
 
     class Meta(object):
         follow = ['service_user', 'service_provider']
@@ -215,3 +219,19 @@ class OrderRating(db.Base):
     su_rating = Column(Integer, default=-1)
     order_id = Column("order_id", ForeignKey('orders.id'))
 
+
+class OrderBid(db.Base):
+    __tablename__ = 'order_bid'
+
+    id = Column(Integer, primary_key=True)
+    service_provider_id = Column(ForeignKey("service_provider.id"))
+    order_id = Column(ForeignKey("orders.id"))
+    created = Column(DateTime(timezone=True), default=datetime.utcnow())
+    accepted = Column(Boolean, default=False)
+    selected = Column(Boolean, default=False)
+
+    class Meta(object):
+        follow = ['order']
+        follow_exclude = []
+        exclude = []
+        fk = []
