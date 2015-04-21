@@ -63,6 +63,7 @@ class OrderEmail(EmailService):
     def __init__(self, email, first_name, **kwargs):
         self.service = kwargs['service']
         self.template = kwargs['template']
+        self.bcc_email = constants.SUPPORT_EMAIL_ADDRESS
         if self.template == 'order_accepted_laundry':
             self.request = kwargs['request']
             self.order_id = kwargs['order_id']

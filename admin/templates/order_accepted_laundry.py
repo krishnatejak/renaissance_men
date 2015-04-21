@@ -4,7 +4,7 @@ order_accepted_laundry = """
 <div style="padding-left:5%">
     <p><b>Order Details:</b></p>
     <p>Order Number: {order_number}</p>
-    <p>Pickup Time: {pickup_time}</p>
+    <p>Pickup Time: between {pickup_time}</p>
     <p>Pickup Address: {order_address}</p>
     <p>Phone Number: {phone_number}</p>
 </div>
