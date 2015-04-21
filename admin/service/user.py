@@ -111,6 +111,8 @@ def handle_user_authentication(dbsession, user_dict, user_type):
         if not user.admin:
             raise AppException('User is not admin')
         return user
+    else:
+        raise AppException('Unknown user type')
 
 
 def verify_otp(dbsession, redisdb, uid, token):

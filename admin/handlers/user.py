@@ -18,7 +18,7 @@ class UserHandler(BaseHandler):
         self.send_model_response(user)
 
     @handle_exceptions
-    @allow('service_provider', 'service_user', 'admin', base=True)
+    @allow('service_provider', 'service_user', 'admin')
     def put(self, *args, **kwargs):
         data = self.check_input('update')
         user = update_user(self.dbsession, kwargs['buid'], data)

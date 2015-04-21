@@ -1,6 +1,6 @@
 import json
 
-from admin.models import Orders, MissedOrders, OrderRating
+from admin.models import *
 from admin import tasks
 import config
 from search.service.slots import assign_slot_to_sp
@@ -10,8 +10,9 @@ from exc import AppException
 from utils import transaction, update_model_from_dict, parse_datetime
 
 __all__ = ['create_order', 'get_order', 'get_su_orders_by_status', 'update_order',
-           'save_missed_records', 'save_rating', 'update_order_status',
-           'assign_order_to_phone_number', 'get_admin_orders']
+           'save_missed_records','get_missed_orders', 'save_rating', 'update_order_status',
+           'assign_order_to_phone_number', 'get_admin_orders', 'bid_order',
+           'get_sp_order_bids', 'get_admin_order_bids']
 
 
 @transaction
@@ -95,6 +96,15 @@ def save_missed_records(dbsession, data):
     dbsession.commit()
     return missed_order
 
+def get_missed_orders(dbsession, oid=None):
+
+    orders = dbsession.query(MissedOrders).filter(
+            MissedOrders.service_available == False,
+        )
+
+    return orders.order_by(MissedOrders.created.desc())
+
+
 
 @transaction
 def save_rating(dbsession, order_string, rating):
@@ -136,7 +146,7 @@ def get_sp_orders_by_status(dbsession, spid, status):
     if status:
         status = status.strip()
         status = status.split(',')
-        orders = dbsession.filter(
+        orders = dbsession.query(Orders).filter(
             Orders.status.in_(status)
         )
     return orders
@@ -186,3 +196,58 @@ def get_admin_orders(dbsession, oid=None):
     else:
         order = dbsession.query(Orders).order_by(Orders.created.desc())
     return order
+
+
+@transaction
+def bid_order(dbsession, oid, spid, accepted=False):
+    order = dbsession.query(Orders).filter(
+        Orders.id == oid
+    ).one()
+
+    service_provider = dbsession.query(ServiceProvider).filter(
+        ServiceProvider.id == spid
+    ).one()
+
+    if not order.service in service_provider.skills:
+        raise AppException('order service not offered by service provider')
+
+    order_bids = dbsession.query(OrderBid).filter(
+        OrderBid.order_id == oid,
+        OrderBid.service_provider_id == spid
+    ).count()
+
+    if order_bids > 0:
+        raise AppException('service provider already bid for the order')
+
+    order_bid = OrderBid()
+    order_bid.order_id = oid
+    order_bid.service_provider_id = spid
+    order_bid.accepted = accepted
+
+    # TODO verify if slot is free for service provider before assignment
+    if not order.service_provider_id:
+        order.service_provider_id = spid
+        order.status = 'assigned'
+        order_bid.selected = True
+
+    dbsession.add(order)
+    dbsession.add(order_bid)
+
+    dbsession.commit()
+    return order_bid
+
+
+def get_sp_order_bids(dbsession, spid):
+    order_bids = dbsession.query(OrderBid).filter(
+        OrderBid.service_provider_id == spid
+    ).order_by(OrderBid.created.desc())
+
+    return order_bids
+
+
+def get_admin_order_bids(dbsession, oid):
+    order_bids = dbsession.query(OrderBid).filter(
+        OrderBid.order_id == oid
+    )
+
+    return order_bids

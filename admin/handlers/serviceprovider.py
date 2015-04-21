@@ -3,6 +3,7 @@ from utils import allow
 from admin.handlers.common import BaseHandler
 from admin.service.serviceprovider import *
 from admin.service.order import get_sp_orders_by_status
+from admin.service.order import get_sp_order_bids
 from tornado.gen import coroutine
 import tornado.httpclient
 import tornado.web
@@ -11,7 +12,7 @@ import tornado.web
 from botocore_tornado import session as botosession
 __all__ = ['ServiceProviderHandler', 'ServiceProviderJobHandler',
            'ServiceProviderOrdersHandler', 'ServiceProviderUploadHandler',
-           'AdminServiceProviderHandler']
+           'AdminServiceProviderHandler', 'ServiceProviderBidsHandler']
 
 
 class ServiceProviderHandler(BaseHandler):
@@ -171,3 +172,11 @@ class AdminServiceProviderHandler(ServiceProviderHandler):
     @allow('admin')
     def delete(self, *args, **kwargs):
         pass
+
+
+class ServiceProviderBidsHandler(BaseHandler):
+
+    @allow('service_provider', base=True)
+    def get(self, *args, **kwargs):
+        order_bids = get_sp_order_bids(self.dbsession, kwargs['uid'])
+        self.send_model_response(order_bids)
